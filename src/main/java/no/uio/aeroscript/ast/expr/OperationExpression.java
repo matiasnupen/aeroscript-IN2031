@@ -21,12 +21,33 @@ public class OperationExpression extends Expression {
     }
 
     @Override
-    public Float evaluate() {
-        // Implement method to evaluate the various expressions
+    public Object evaluate() {
+        switch (operation) {
+            case "NEG":
+                NegNumberExpression negExpr = new NegNumberExpression(left);
+                return negExpr.evaluate();
+
+            case "POINT":
+                PointExpression pointExpr = new PointExpression(left, right);
+                return pointExpr.evaluate();
+
+            case "RANDOM":
+                RangeExpression rangeExpr = new RangeExpression(left, right);
+                return rangeExpr.evaluate();
+        }
+
+        // Handle standard arithmetic operations
         Object val1 = left.evaluate();
         Object val2 = right.evaluate();
         if (val1 instanceof Float f1 && val2 instanceof Float f2) {
             return switch (operation) {
+
+                // These are created to match the names in OperationExpressionTest
+                case "PLUS" -> f1 + f2;
+                case "MINUS" -> f1 - f2;
+                case "TIMES" -> f1 * f2;
+
+                // Previous variable names for arithmetic operations
                 case "SUM" -> f1 + f2;
                 case "SUB" -> f1 - f2;
                 case "MUL" -> f1 * f2;

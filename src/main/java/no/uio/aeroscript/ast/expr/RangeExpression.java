@@ -24,6 +24,6 @@ public class RangeExpression extends Expression {
         if (lval instanceof Float f1 && rval instanceof Float f2) {
             return new Range(f1,f2).getRandomNumber();
         }
-        else throw new IllegalArgumentException("Invalid arguments to arithmetic operation");
+        else throw new IllegalArgumentException("Range bounds must be numbers, got: " + lval + ", " + rval);
     }
 }
