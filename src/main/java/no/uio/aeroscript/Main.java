@@ -2,7 +2,7 @@ package no.uio.aeroscript;
 
 import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.stmt.Execution;
+import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;

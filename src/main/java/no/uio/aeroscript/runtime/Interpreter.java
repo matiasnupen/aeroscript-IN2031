@@ -40,9 +40,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
     /* Program = list of executions */
     @Override
-    public ArrayList<Execution> visitProgram(AeroScriptParser.ProgramContext ctx) {
+    public ArrayList<Mode> visitProgram(AeroScriptParser.ProgramContext ctx) {
         // Implement the method
-        return new ArrayList<Execution>();
+        return new ArrayList<Mode>();
     }
 
     /* Expressions */

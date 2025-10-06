@@ -2,7 +2,7 @@ package no.uio.aeroscript.runtime;
 
 import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.stmt.Execution;
+import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.ast.stmt.Statement;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
@@ -39,7 +39,7 @@ class InterpreterTest {
         vars.put("battery level", batteryLevel);
         vars.put("battery low", false);
         vars.put("distance travelled", 0.0f);
-        vars.put("initial execution", null);
+        vars.put("initial mode", null);
 
         heap.put(Memory.VARIABLES, vars);
     }
@@ -52,7 +52,7 @@ class InterpreterTest {
     }
 
     @Test
-    void getFirstExecution() {
+    void getFirstMode() {
         initInterpreter();
         Interpreter interpreter = new Interpreter(this.heap, this.stack);
 
