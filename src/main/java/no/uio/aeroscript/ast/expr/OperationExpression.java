@@ -41,16 +41,9 @@ public class OperationExpression extends Expression {
         Object val2 = right.evaluate();
         if (val1 instanceof Float f1 && val2 instanceof Float f2) {
             return switch (operation) {
-
-                // These are created to match the names in OperationExpressionTest
-                case "PLUS" -> f1 + f2;
-                case "MINUS" -> f1 - f2;
-                case "TIMES" -> f1 * f2;
-
-                // Previous variable names for arithmetic operations
-                case "SUM" -> f1 + f2;
-                case "SUB" -> f1 - f2;
-                case "MUL" -> f1 * f2;
+                case "PLUS", "SUM" -> f1 + f2;
+                case "MINUS", "SUB" -> f1 - f2;
+                case "TIMES", "MUL" -> f1 * f2;
                 case "DIV" -> f1 / f2;
                 case "MOD" -> f1 % f2;
                 default -> throw new IllegalArgumentException("Invalid operation: " + operation);
