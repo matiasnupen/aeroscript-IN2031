@@ -1,5 +1,6 @@
 package no.uio.aeroscript.ast.stmt.action.moveAction;
 
+import no.uio.aeroscript.ast.expr.NumberExpression;
 import no.uio.aeroscript.ast.expr.PointExpression;
 import no.uio.aeroscript.ast.stmt.Statement;
 import no.uio.aeroscript.runtime.DroneState;
@@ -8,13 +9,13 @@ import no.uio.aeroscript.type.Point;
 public class MoveActionByPoint extends Statement {
 
     private final PointExpression pointExpression;
-    private final Float speed;
-    private final Float secondsTravelling;
+    private final NumberExpression numberSpeedExpression;
+    private final NumberExpression numberSecondsExpression;
 
-    public MoveActionByPoint(PointExpression expression, Float speed, Float secondsTravelling) {
-        this.pointExpression = expression;
-        this.speed = speed != null ? speed : 1.0f; // Default speed to 1.0 if not provided (m/s)
-        this.secondsTravelling = secondsTravelling;
+    public MoveActionByPoint(PointExpression point, NumberExpression speed, NumberExpression secondsTravelling) {
+        this.pointExpression = point;
+        this.numberSpeedExpression = speed != null ? speed : new NumberExpression(1.0f); // Default speed to 1.0 if not provided (m/s)
+        this.numberSecondsExpression = secondsTravelling;
     }
 
     @Override
@@ -35,8 +36,8 @@ public class MoveActionByPoint extends Statement {
         droneState.setTotalDistanceTraveled(currentDistanceTraveled + targetPoint.distanceTo(currentPosition));
 
         // Calculate battery cost: distance * 0.5 + time * 0.1 + speed * 1
-        Float time = secondsTravelling != null ? secondsTravelling : currentPosition.distanceTo(targetPoint) / speed;
-        Float batteryCost = (currentPosition.distanceTo(targetPoint) * 0.5f) + (time * 0.1f) + (speed * 1.0f);
+        Float time = numberSecondsExpression != null ? numberSecondsExpression.evaluate() : currentPosition.distanceTo(targetPoint) / numberSpeedExpression.evaluate();
+        Float batteryCost = (currentPosition.distanceTo(targetPoint) * 0.5f) + (time * 0.1f) + (numberSpeedExpression.evaluate() * 1.0f);
 
         Float currentBattery = droneState.getBatteryLevel();
         droneState.setBatteryLevel(currentBattery - batteryCost);

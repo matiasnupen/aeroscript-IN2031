@@ -7,21 +7,25 @@ import no.uio.aeroscript.type.Point;
 
 public class MoveActionByNumber extends Statement {
 
-    private final NumberExpression numberExpression;
-    private final Float speed;
-    private final Float secondsTravelling;
+    private final NumberExpression numberDistanceExpression;
+    private final NumberExpression numberSpeedExpression;
+    private final NumberExpression numberDurationExpression;
 
-    public MoveActionByNumber(NumberExpression numberExpression, Float speed, Float secondsTravelling) {
-        this.numberExpression = numberExpression;
-        this.speed = speed != null ? speed : 1.0f; // Default speed to 1.0 if not provided (m/s)
-        this.secondsTravelling = secondsTravelling;
+    public MoveActionByNumber(NumberExpression numberDistanceExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
+        this.numberDistanceExpression = numberDistanceExpression;
+        this.numberSpeedExpression = numberSpeedExpression;
+        this.numberDurationExpression = numberDurationExpression;
     }
 
     @Override
-    public void execute() { // TODO: fix comments and javadoc
+    public void execute() {
         // Evaluate the number expression to get the distance to move
-        Object distanceValue = numberExpression.evaluate();
-        float distance = Float.parseFloat(distanceValue.toString());
+        Object distanceValue = numberDistanceExpression.evaluate();
+        Float distance = Float.parseFloat(distanceValue.toString());
+
+        // Evaluate speed and duration expressions
+        Float speed = numberSpeedExpression != null ? Float.parseFloat(numberSpeedExpression.evaluate().toString()) : 1.0f;
+        Float secondsTravelling = numberDurationExpression != null ? Float.parseFloat(numberDurationExpression.evaluate().toString()) : null;
 
         DroneState droneState = DroneState.getInstance();
         Point currentPosition = droneState.getCurrentPosition();
@@ -43,6 +47,6 @@ public class MoveActionByNumber extends Statement {
 
     @Override
     public String toString() {
-        return "MoveActionByNumber: " + numberExpression.toString();
+        return "MoveActionByNumber: " + numberDistanceExpression.toString() + (numberSpeedExpression != null ? " at speed " + numberSpeedExpression.toString() : "") + (numberDurationExpression != null ? " for " + numberDurationExpression.toString() + " seconds" : "");
     }
 }
