@@ -20,4 +20,11 @@ public class Point {
     public float getY() {
         return y;
     }
+
+    // Method for calculating the distance between two points
+    public Float distanceTo(Point other) {
+        Float distanceX = this.x - other.x;
+        Float distanceY = this.y - other.y; 
+        return (float) Math.max(Math.abs(distanceX), Math.abs(distanceY));
+    }
 }
