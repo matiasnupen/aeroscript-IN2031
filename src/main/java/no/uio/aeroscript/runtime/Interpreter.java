@@ -60,29 +60,29 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         };
     }
     @Override
-    public Expression visitPlusExp(AeroScriptParser.PlusExpContext ctx){
+    public Expression visitPlusExp(AeroScriptParser.PlusExpContext ctx) {
         Expression left = visitExpression(ctx.left);
         Expression right = visitExpression(ctx.right);
-        return new OperationExpression("SUM",left, right);
+        return new OperationExpression("SUM", left, right);
     }
     @Override
-    public Expression visitMinusExp(AeroScriptParser.MinusExpContext ctx){
+    public Expression visitMinusExp(AeroScriptParser.MinusExpContext ctx) {
         Expression left = visitExpression(ctx.left);
         Expression right = visitExpression(ctx.right);
         return new OperationExpression("SUB",left, right);
     }
     @Override
-    public Expression visitTimesExp(AeroScriptParser.TimesExpContext ctx){
+    public Expression visitTimesExp(AeroScriptParser.TimesExpContext ctx) {
         Expression left = visitExpression(ctx.left);
         Expression right = visitExpression(ctx.right);
         return new OperationExpression("MUL",left, right);
     }
     @Override
-    public Expression visitNumExp(AeroScriptParser.NumExpContext ctx){
+    public Expression visitNumExp(AeroScriptParser.NumExpContext ctx) {
         return new NumberExpression(Float.parseFloat(ctx.NUMBER().getText()));
     }
     @Override
-    public Expression visitNegExp(AeroScriptParser.NegExpContext ctx){
+    public Expression visitNegExp(AeroScriptParser.NegExpContext ctx) {
         return new NegNumberExpression(visitExpression(ctx.expression())) ;
     }
     @Override
@@ -90,13 +90,13 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return visitExpression(ctx.expression());
     }
     @Override
-    public Expression visitPointExp(AeroScriptParser.PointExpContext ctx){
+    public Expression visitPointExp(AeroScriptParser.PointExpContext ctx) {
         Expression left = visitExpression(ctx.point().left);
         Expression right = visitExpression(ctx.point().right);
         return new PointExpression(left, right);
     }
     @Override
-    public Expression visitRangeExp(AeroScriptParser.RangeExpContext ctx){
+    public Expression visitRangeExp(AeroScriptParser.RangeExpContext ctx) {
         Expression left = visitExpression(ctx.range().left);
         Expression right = visitExpression(ctx.range().right);
         return new RangeExpression(left, right);

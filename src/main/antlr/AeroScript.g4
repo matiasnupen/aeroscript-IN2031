@@ -73,16 +73,8 @@ statement : action ;
 *  or a speed (AT SPEED ...)
 */
 action
-    : ( acDock
-      | acMove
-      | acTurn  
-      | acAscend
-      | acDescend
-      ) 
-      ( FOR expression SECONDS
-      | AT SPEED expression
-      )? 
-      ;
+    : ( acDock | acMove | acTurn | acAscend | acDescend )
+      ( FOR expression SECONDS | AT SPEED expression )? ;
 
 // Define each action
 acDock    : RETURN TO BASE ;
