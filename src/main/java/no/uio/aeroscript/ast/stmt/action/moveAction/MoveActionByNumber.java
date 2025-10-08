@@ -10,8 +10,11 @@ public class MoveActionByNumber extends Statement {
     private final NumberExpression numberDistanceExpression;
     private final NumberExpression numberSpeedExpression;
     private final NumberExpression numberDurationExpression;
+    
+    private final DroneState droneState;
 
-    public MoveActionByNumber(NumberExpression numberDistanceExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
+    public MoveActionByNumber(DroneState droneState, NumberExpression numberDistanceExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
+        this.droneState = droneState;
         this.numberDistanceExpression = numberDistanceExpression;
         this.numberSpeedExpression = numberSpeedExpression;
         this.numberDurationExpression = numberDurationExpression;
@@ -27,7 +30,6 @@ public class MoveActionByNumber extends Statement {
         Float speed = numberSpeedExpression != null ? Float.parseFloat(numberSpeedExpression.evaluate().toString()) : 1.0f;
         Float secondsTravelling = numberDurationExpression != null ? Float.parseFloat(numberDurationExpression.evaluate().toString()) : null;
 
-        DroneState droneState = DroneState.getInstance();
         Point currentPosition = droneState.getCurrentPosition();
 
         // Moving along the x-axis (STANDARD FOR THIS PROGRAM)

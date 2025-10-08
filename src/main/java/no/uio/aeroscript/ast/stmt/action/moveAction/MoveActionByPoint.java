@@ -12,23 +12,20 @@ public class MoveActionByPoint extends Statement {
     private final NumberExpression numberSpeedExpression;
     private final NumberExpression numberSecondsExpression;
 
-    public MoveActionByPoint(PointExpression point, NumberExpression speed, NumberExpression secondsTravelling) {
-        this.pointExpression = point;
-        this.numberSpeedExpression = speed != null ? speed : new NumberExpression(1.0f); // Default speed to 1.0 if not provided (m/s)
-        this.numberSecondsExpression = secondsTravelling;
+    private final DroneState droneState;
+
+    public MoveActionByPoint(DroneState droneState, PointExpression pointExpression, NumberExpression numberSpeedExpression, NumberExpression numberSecondsExpression) {
+        this.droneState = droneState;
+        this.pointExpression = pointExpression;
+        this.numberSpeedExpression = numberSpeedExpression != null ? numberSpeedExpression : new NumberExpression(1.0f); // Default speed to 1.0 if not provided (m/s)
+        this.numberSecondsExpression = numberSecondsExpression != null ? numberSecondsExpression : new NumberExpression(1.0f); // Default seconds to 1.0 if not provided
     }
 
     @Override
     public void execute() {
-
         Object evaluatedPoint = pointExpression.evaluate();
-        if (!(evaluatedPoint instanceof Point)) {
-            throw new RuntimeException("Expected a Point, but got: " + evaluatedPoint);
-        }
-
         Point targetPoint = (Point) evaluatedPoint;
 
-        DroneState droneState = DroneState.getInstance();
         Point currentPosition = droneState.getCurrentPosition();
         droneState.setCurrentPosition(targetPoint);
 

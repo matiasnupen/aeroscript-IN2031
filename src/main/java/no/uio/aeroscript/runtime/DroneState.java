@@ -4,6 +4,7 @@ import no.uio.aeroscript.type.Point;
 
 public class DroneState {
 
+    private Point base;
     private Point currentPosition;
     private Float currentAltitude;
     private Float currentPointingDirection;
@@ -15,12 +16,12 @@ public class DroneState {
 
     public DroneState() {
         this.currentPosition = new Point(0, 0); // starting point
+        this.base = currentPosition;
         this.currentAltitude = 0.0f;
         this.currentPointingDirection = 0.0f; // Default pointing direction (0 degrees)
         this.batteryLevel = 100.0f; // Battery level in percentage (100% full)
         this.isFlying = false;
-        this.totalDistanceTraveled = 0.0f;
-        instance = this;
+        this.totalDistanceTraveled = 0.0f; 
     }
 
     public Point getCurrentPosition() { return currentPosition; }
@@ -43,5 +44,10 @@ public class DroneState {
     public void setFlying(boolean flying) { isFlying = flying; }
     public void setTotalDistanceTraveled(Float totalDistanceTraveled) { this.totalDistanceTraveled = totalDistanceTraveled; }
     public void setCurrentPointingDirection(Float currentPointingDirection) { this.currentPointingDirection = currentPointingDirection; }
+    public void goToBase() { 
+        currentPosition = base; 
+        currentAltitude = 0.0f; 
+        isFlying = false; 
+    }
 
 }

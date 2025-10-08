@@ -8,8 +8,10 @@ public abstract class BaseTurnAction extends Statement {
 
     protected final NumberExpression numberDegreesExpression;
     protected final NumberExpression numberSpeedExpression;
+    protected final DroneState droneState;
 
-    public BaseTurnAction(NumberExpression numberDegreesExpression, NumberExpression numberSpeedExpression) {
+    public BaseTurnAction(DroneState droneState, NumberExpression numberDegreesExpression, NumberExpression numberSpeedExpression) {
+        this.droneState = droneState;
         this.numberDegreesExpression = numberDegreesExpression;
         this.numberSpeedExpression = numberSpeedExpression != null ? numberSpeedExpression : new NumberExpression(1.0f);
     }
@@ -19,7 +21,6 @@ public abstract class BaseTurnAction extends Statement {
         Object degreeValue = numberDegreesExpression.evaluate();
         Float degrees = Float.parseFloat(degreeValue.toString());
 
-        DroneState droneState = DroneState.getInstance();
         Float currentPointingDirection = droneState.getCurrentPointingDirection();
 
         // Template method - subclasses define how to calculate new direction
