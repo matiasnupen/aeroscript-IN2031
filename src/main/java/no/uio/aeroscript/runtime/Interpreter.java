@@ -8,6 +8,9 @@ import no.uio.aeroscript.type.*;
 
 import java.util.*;
 
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 /* For now, let us just ignore interrupts, will need to build
  * an interrupt lookup table and introduce a message queue later... */
 public class Interpreter extends AeroScriptBaseVisitor<Object> {
@@ -69,19 +72,36 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         Action action = null;
         
         if (ctx.acDock() != null) {
-            action = (Action) visitAcDock(ctx.acDock());
+            action = visitAcDock(ctx.acDock());
         } else if (ctx.acMove() != null) {
-            action = (Action) visitAcMove(ctx.acMove());
+            action = visitAcMove(ctx.acMove());
         } else if (ctx.acTurn() != null) {
-            action = (Action) visitAcTurn(ctx.acTurn());
+            action = visitAcTurn(ctx.acTurn());
         } else if (ctx.acAscend() != null) {
-            action = (Action) visitAcAscend(ctx.acAscend());
+            action = visitAcAscend(ctx.acAscend());
         } else if (ctx.acDescend() != null) {
-            action = (Action) visitAcDescend(ctx.acDescend());
+            action = visitAcDescend(ctx.acDescend());
         }
         
         // Handle optional duration and speed modifiers
-        // The action constructors already handle these, so we return the action as-is
+        if (ctx.getChildCount() > 1) {
+            ParseTree modifierStart = ctx.getChild(1);
+            if (modifierStart instanceof TerminalNode) {
+                int tokenType = ((TerminalNode) modifierStart).getSymbol().getType();
+                if (tokenType == AeroScriptParser.FOR) {
+                    // Handle FOR expression SECONDS: child 2 is expression
+                    AeroScriptParser.ExpressionContext exprCtx = (AeroScriptParser.ExpressionContext) ctx.getChild(2);
+                    NumberExpression speedExpr = (NumberExpression) visitExpression(exprCtx);
+                    action.setDurationExpression(speedExpr);
+                } else if (tokenType == AeroScriptParser.AT) {
+                    // Handle AT SPEED expression: child 3 is expression
+                    AeroScriptParser.ExpressionContext exprCtx = (AeroScriptParser.ExpressionContext) ctx.getChild(3);
+                    NumberExpression speedExpr = (NumberExpression) visitExpression(exprCtx);
+                    action.setSpeedExpression(speedExpr);
+                }
+            }
+        }
+
         return action;
     }   
 

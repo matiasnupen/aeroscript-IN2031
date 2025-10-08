@@ -5,9 +5,9 @@ import no.uio.aeroscript.runtime.DroneState;
 
 public abstract class Action extends Statement{
 
-    protected final DroneState droneState;
-    protected final NumberExpression numberSpeedExpression;
-    protected final NumberExpression numberDurationExpression;
+    protected DroneState droneState;
+    protected NumberExpression numberSpeedExpression;
+    protected NumberExpression numberDurationExpression;
 
     protected Action(DroneState droneState, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
         this.droneState = droneState;
@@ -19,6 +19,14 @@ public abstract class Action extends Statement{
     public final void execute() {
         consumeBattery();
         executeAction();
+    }
+
+    public void setSpeedExpression(NumberExpression numberSpeedExpression) {
+        this.numberSpeedExpression = numberSpeedExpression;
+    }
+
+    public void setDurationExpression(NumberExpression numberDurationExpression) {
+        this.numberDurationExpression = numberDurationExpression;
     }
 
     protected abstract void executeAction();
