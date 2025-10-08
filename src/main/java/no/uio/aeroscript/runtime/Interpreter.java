@@ -44,7 +44,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         String name = ctx.ID(0).getText();
 
         List<Statement> statements = new ArrayList<>();
-        for (AeroScriptParser.ExecutionContext statementCtx : ctx.statement()) {
+        for (AeroScriptParser.StatementContext statementCtx : ctx.statement()) {
             Statement statement = (Statement) visitStatement(statementCtx);
             if (statement != null) {
                 statements.add(statement);

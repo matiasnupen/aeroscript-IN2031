@@ -29,7 +29,7 @@ sourceSets {
 }
 
 generateGrammarSource {
-    arguments = ["-visitor"]
+    arguments += ["-visitor"]
     outputDirectory = file("build/generated-src/main/no/uio/aeroscript/antlr")
     maxHeapSize = "64m"
 }
