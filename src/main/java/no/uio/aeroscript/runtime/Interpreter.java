@@ -39,6 +39,58 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     }
 
     @Override
+    public Action visitAcDock(AeroScriptParser.AcDockContext ctx) {
+        //TODO!!
+    }
+
+    @Override
+    public Action visitAcAscend(AeroScriptParser.AcAscendContext ctx) {
+        //TODO!!
+    }
+
+    @Override
+    public Action visitAcDescend(AeroScriptParser.AcDescendContext ctx) {
+        //TODO!!
+    }
+
+    @Override
+    public Action visitAcMove(AeroScriptParser.AcMoveContext ctx) {
+        //TODO!!
+    }
+
+    @Override
+    public Action visitAcTurn(AeroScriptParser.AcTurnContext ctx) {
+        //TODO!!
+    }
+
+    @Override
+    public Action visitAction(AeroScriptParser.ActionContext ctx) {
+        // First get the base action
+        Action action = null;
+        
+        if (ctx.acDock() != null) {
+            action = (Action) visitAcDock(ctx.acDock());
+        } else if (ctx.acMove() != null) {
+            action = (Action) visitAcMove(ctx.acMove());
+        } else if (ctx.acTurn() != null) {
+            action = (Action) visitAcTurn(ctx.acTurn());
+        } else if (ctx.acAscend() != null) {
+            action = (Action) visitAcAscend(ctx.acAscend());
+        } else if (ctx.acDescend() != null) {
+            action = (Action) visitAcDescend(ctx.acDescend());
+        }
+        
+        // Handle optional duration and speed modifiers
+        // The action constructors already handle these, so we return the action as-is
+        return action;
+    }   
+
+    @Override
+    public Statement visitStatement(AeroScriptParser.StatementContext ctx) {
+        return (Statement) visitAction(ctx.action());
+    }
+
+    @Override
     public Mode visitModeDecl(AeroScriptParser.ModeDeclContext ctx) {
         boolean isInitial = ctx.ARROW(0) != null;
         String name = ctx.ID(0).getText();
