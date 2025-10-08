@@ -20,6 +20,7 @@ public class Mode {
     public boolean isInitial() { return isInitial; }
     public List<Statement> getStatements() { return statements; }
     public String getNextModeName() { return nextModeName; }
+
     public boolean hasTransition() { return nextModeName != null; }
 
     public void executeStatements() {
@@ -28,6 +29,7 @@ public class Mode {
         }
     }
 
+    // Using StringBuilder for making it easier to read string representation
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
