@@ -5,8 +5,8 @@ import no.uio.aeroscript.runtime.DroneState;
 
 public class TurnActionRight extends BaseTurnAction {
 
-    public TurnActionRight(DroneState droneState,NumberExpression numberDegreesExpression, NumberExpression numberSpeedExpression) {
-        super(droneState, numberDegreesExpression, numberSpeedExpression);
+    public TurnActionRight(DroneState droneState,NumberExpression numberDegreesExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
+        super(droneState, numberDegreesExpression, numberSpeedExpression, numberDurationExpression);
     }
 
     @Override

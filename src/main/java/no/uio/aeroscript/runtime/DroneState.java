@@ -50,4 +50,17 @@ public class DroneState {
         isFlying = false; 
     }
 
+    @Override
+    public String toString() {
+        return "DroneState{" +
+                "base=" + base.toString() +
+                ", currentPosition=" + currentPosition.toString() +
+                ", currentAltitude=" + currentAltitude.toString() +
+                ", currentPointingDirection=" + currentPointingDirection.toString() +
+                ", batteryLevel=" + batteryLevel.toString() +
+                ", isFlying=" + isFlying +
+                ", totalDistanceTraveled=" + totalDistanceTraveled.toString() +
+                '}';
+    }
+
 }

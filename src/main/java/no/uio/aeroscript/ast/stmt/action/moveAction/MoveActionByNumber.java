@@ -10,7 +10,7 @@ public class MoveActionByNumber extends Statement {
     private final NumberExpression numberDistanceExpression;
     private final NumberExpression numberSpeedExpression;
     private final NumberExpression numberDurationExpression;
-    
+
     private final DroneState droneState;
 
     public MoveActionByNumber(DroneState droneState, NumberExpression numberDistanceExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -25,11 +25,6 @@ public class MoveActionByNumber extends Statement {
         // Evaluate the number expression to get the distance to move
         Object distanceValue = numberDistanceExpression.evaluate();
         Float distance = Float.parseFloat(distanceValue.toString());
-
-        // Evaluate speed and duration expressions
-        Float speed = numberSpeedExpression != null ? Float.parseFloat(numberSpeedExpression.evaluate().toString()) : 1.0f;
-        Float secondsTravelling = numberDurationExpression != null ? Float.parseFloat(numberDurationExpression.evaluate().toString()) : null;
-
         Point currentPosition = droneState.getCurrentPosition();
 
         // Moving along the x-axis (STANDARD FOR THIS PROGRAM)
@@ -39,16 +34,19 @@ public class MoveActionByNumber extends Statement {
         Float currentDistanceTraveled = droneState.getTotalDistanceTraveled();
         droneState.setTotalDistanceTraveled(currentDistanceTraveled + distance);
 
-        // Calculate battery cost: distance * 0.5 + time * 0.1 + speed * 1
-        Float time = secondsTravelling != null ? secondsTravelling : distance / speed; // If secondsTravelling is not provided, calculate it based on distance and speed
-        Float batteryCost = (distance * 0.5f) + (time * 0.1f) + (speed * 1.0f);
+        Float speed = numberSpeedExpression != null ? Float.parseFloat(numberSpeedExpression.evaluate().toString()) : 1.0f;
+        Float time = numberDurationExpression != null ? Float.parseFloat(numberDurationExpression.evaluate().toString()) : distance / speed;
 
-        Float currentBattery = droneState.getBatteryLevel();
-        droneState.setBatteryLevel(currentBattery - batteryCost);
+        Float batteryCost = (distance * 0.5f) + (time * 0.1f) + (speed * 1.0f);
+        droneState.setBatteryLevel(droneState.getBatteryLevel() - batteryCost);
     }
 
     @Override
     public String toString() {
-        return "MoveActionByNumber: " + numberDistanceExpression.toString() + (numberSpeedExpression != null ? " at speed " + numberSpeedExpression.toString() : "") + (numberDurationExpression != null ? " for " + numberDurationExpression.toString() + " seconds" : "");
+        return "MoveActionByNumber{" +
+                "numberDistanceExpression=" + numberDistanceExpression.toString() +
+                ", numberSpeedExpression=" + numberSpeedExpression.toString() +
+                ", numberDurationExpression=" + numberDurationExpression.toString() +
+                '}';
     }
 }
