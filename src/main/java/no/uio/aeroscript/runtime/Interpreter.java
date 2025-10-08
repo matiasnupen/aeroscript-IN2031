@@ -38,11 +38,36 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Range(start, end);
     }
 
+    @Override
+    public Mode visitModeDecl(AeroScriptParser.ModeDeclContext ctx) {
+        boolean isInitial = ctx.ARROW(0) != null;
+        String name = ctx.ID(0).getText();
+
+        List<Statement> statements = new ArrayList<>();
+        for (AeroScriptParser.ExecutionContext statementCtx : ctx.statement()) {
+            Statement statement = (Statement) visitStatement(statementCtx);
+            if (statement != null) {
+                statements.add(statement);
+            }
+        }
+
+        String nextModeName = null;
+        if (ctx.ID().size() > 1) {
+            nextModeName = ctx.ID(1).getText();
+        }
+
+        return new Mode(name, isInitial, statements, nextModeName);
+    }
+
     /* Program = list of executions */
     @Override
     public ArrayList<Mode> visitProgram(AeroScriptParser.ProgramContext ctx) {
-        // Implement the method
-        return new ArrayList<Mode>();
+        ArrayList<Mode> modes = new ArrayList<>();
+        for (AeroScriptParser.ModeDeclContext modeCtx : ctx.modeDecl()) {
+            Mode mode = visitModeDecl(modeCtx);
+            modes.add(mode);
+        }
+        return modes;
     }
 
     /* Expressions */
