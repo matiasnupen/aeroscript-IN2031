@@ -1,15 +1,31 @@
 package no.uio.aeroscript.runtime;
 
-import no.uio.aeroscript.antlr.AeroScriptBaseVisitor;
-import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.expr.*;
-import no.uio.aeroscript.ast.stmt.*;
-import no.uio.aeroscript.type.*;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Stack;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+
+import no.uio.aeroscript.antlr.AeroScriptBaseVisitor;
+import no.uio.aeroscript.antlr.AeroScriptParser;
+import no.uio.aeroscript.ast.expr.Expression;
+import no.uio.aeroscript.ast.expr.NegNumberExpression;
+import no.uio.aeroscript.ast.expr.NumberExpression;
+import no.uio.aeroscript.ast.expr.OperationExpression;
+import no.uio.aeroscript.ast.expr.PointExpression;
+import no.uio.aeroscript.ast.expr.RangeExpression;
+import no.uio.aeroscript.ast.stmt.Action;
+import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.ast.stmt.Statement;
+import no.uio.aeroscript.ast.stmt.action.AltitudeAction;
+import no.uio.aeroscript.ast.stmt.action.DockAction;
+import no.uio.aeroscript.ast.stmt.action.MoveAction;
+import no.uio.aeroscript.ast.stmt.action.TurnAction;
+import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.Range;
 
 /* For now, let us just ignore interrupts, will need to build
  * an interrupt lookup table and introduce a message queue later... */
@@ -41,34 +57,77 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Range(start, end);
     }
 
+        /** Actions 
+         * The visitAc...-methods create the appropriate Action objects
+         * and set the drone state and any relevant parameters.
+         * 
+         * The duration and speed expressions are set to null for now
+         * as these will be set later if they are present in the action
+        */
+
     @Override
     public Action visitAcDock(AeroScriptParser.AcDockContext ctx) {
-        //TODO!!
+        DroneState droneState = DroneState.getInstance();
+        return new DockAction(droneState, null, null);
     }
 
     @Override
     public Action visitAcAscend(AeroScriptParser.AcAscendContext ctx) {
-        //TODO!!
+        DroneState droneState = DroneState.getInstance();
+
+        // ONLY ASCENDING BY NUMBER
+        NumberExpression numberAscendingExpression = (NumberExpression) visit(ctx.expression());
+        return new AltitudeAction.Ascend(droneState, numberAscendingExpression, null, null);
     }
 
     @Override
     public Action visitAcDescend(AeroScriptParser.AcDescendContext ctx) {
-        //TODO!!
+        DroneState droneState = DroneState.getInstance();
+
+        if (ctx.BY() != null) {
+            // DESCEND BY NUMBER
+            NumberExpression numberDescendingExpression = (NumberExpression) visit(ctx.expression());
+            return new AltitudeAction.Descend(droneState, numberDescendingExpression, null, null);
+        } else {
+            // DESCEND TO GROUND
+            return new AltitudeAction.DescendToGround(droneState, null, null);
+        }
     }
 
     @Override
     public Action visitAcMove(AeroScriptParser.AcMoveContext ctx) {
-        //TODO!!
+        DroneState droneState = DroneState.getInstance();
+        
+        if (ctx.point() != null) {
+            // MOVE TO POINT
+            Expression xCordinateExpression = visitExpression(ctx.point().left);
+            Expression yCordinateExpression = visitExpression(ctx.point().right);
+            PointExpression pointExpr = new PointExpression(xCordinateExpression, yCordinateExpression);
+            return new MoveAction.ByPoint(droneState, pointExpr, null, null);
+        } else {
+            // MOVE BY NUMBER
+            NumberExpression distanceExpr = new NumberExpression(Float.parseFloat(ctx.NUMBER().getText()));
+            return new MoveAction.ByDistance(droneState, distanceExpr, null, null);
+        }
     }
 
     @Override
     public Action visitAcTurn(AeroScriptParser.AcTurnContext ctx) {
-        //TODO!!
+        DroneState droneState = DroneState.getInstance();
+        NumberExpression numberDegreesExpression = (NumberExpression) visit(ctx.expression());
+        
+        if (ctx.LEFT() != null) {
+            // TURN LEFT
+            return new TurnAction.Left(droneState, numberDegreesExpression, null, null);
+        } else {
+            // TURN RIGHT
+            return new TurnAction.Right(droneState, numberDegreesExpression, null, null);
+        } 
     }
 
     @Override
     public Action visitAction(AeroScriptParser.ActionContext ctx) {
-        // First get the base action
+        // Get the base action
         Action action = null;
         
         if (ctx.acDock() != null) {
@@ -91,8 +150,8 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                 if (tokenType == AeroScriptParser.FOR) {
                     // Handle FOR expression SECONDS: child 2 is expression
                     AeroScriptParser.ExpressionContext exprCtx = (AeroScriptParser.ExpressionContext) ctx.getChild(2);
-                    NumberExpression speedExpr = (NumberExpression) visitExpression(exprCtx);
-                    action.setDurationExpression(speedExpr);
+                    NumberExpression durationExpr = (NumberExpression) visitExpression(exprCtx);
+                    action.setDurationExpression(durationExpr);
                 } else if (tokenType == AeroScriptParser.AT) {
                     // Handle AT SPEED expression: child 3 is expression
                     AeroScriptParser.ExpressionContext exprCtx = (AeroScriptParser.ExpressionContext) ctx.getChild(3);
