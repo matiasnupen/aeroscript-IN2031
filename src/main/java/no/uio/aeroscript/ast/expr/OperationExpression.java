@@ -41,6 +41,7 @@ public class OperationExpression extends Expression {
         Object val2 = right.evaluate();
         if (val1 instanceof Float f1 && val2 instanceof Float f2) {
             return switch (operation) {
+                // Keeping old names such as "PLUS", "MINUS", "TIMES" for matching with handed out tests.
                 case "PLUS", "SUM" -> f1 + f2;
                 case "MINUS", "SUB" -> f1 - f2;
                 case "TIMES", "MUL" -> f1 * f2;

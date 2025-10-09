@@ -39,6 +39,18 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         this.stack = stack;
     }
 
+
+
+    private Object getVariable(String varName) {
+        HashMap<String, Object> vars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
+        return vars.get(varName);
+    }
+
+    private void setVariable(String varName, Object value) {
+        HashMap<String, Object> vars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
+        vars.put(varName, value);
+    }
+
     @Override
     public Object visitPoint(AeroScriptParser.PointContext ctx) {
         Expression xNode = (Expression) visit(ctx.expression(0));
@@ -160,9 +172,72 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                 }
             }
         }
-
         return action;
-    }   
+    }
+
+    private void executeAction(Action action) {
+        // Execute the action (this will update the DroneState singleton)
+        action.execute();
+        
+        // Get the updated state from DroneState singleton
+        DroneState droneState = DroneState.getInstance();
+
+        // Update heap with new values
+        setVariable("current position", droneState.getCurrentPosition());
+        setVariable("altitude", droneState.getCurrentAltitude());
+        setVariable("battery level", droneState.getBatteryLevel());
+        setVariable("distance travelled", droneState.getTotalDistanceTravelled());
+
+        // Check for low battery condition
+        if (droneState.getBatteryLevel() <= 10.0f) {
+            setVariable("battery low", true);
+        }
+    }
+    
+    public void executeMode(Mode mode) {
+        // Execute all statements in this mode
+        for (Statement statement : mode.getStatements()) {
+            if (statement instanceof Action) {
+                executeAction((Action) statement);
+            }
+        }
+    }
+    
+    public void executeProgram(ArrayList<Mode> modes) {
+        // Find the initial mode and execute it
+        Mode initialMode = null;
+        for (Mode mode : modes) {
+            if (mode.isInitial()) {
+                initialMode = mode;
+                break;
+            }
+        }
+        
+        if (initialMode != null) {
+            executeMode(initialMode);
+            
+            // Handle mode transitions if needed
+            String nextModeName = initialMode.getNextModeName();
+            while (nextModeName != null) {
+                Mode nextMode = findModeByName(modes, nextModeName);
+                if (nextMode != null) {
+                    executeMode(nextMode);
+                    nextModeName = nextMode.getNextModeName();
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    
+    private Mode findModeByName(ArrayList<Mode> modes, String name) {
+        for (Mode mode : modes) {
+            if (mode.getName().equals(name)) {
+                return mode;
+            }
+        }
+        return null;
+    }
 
     @Override
     public Statement visitStatement(AeroScriptParser.StatementContext ctx) {

@@ -21,7 +21,7 @@ public abstract class MoveAction extends Action {
         Float distance = currentPosition.distanceTo(newPosition);
 
         droneState.setCurrentPosition(newPosition);
-        droneState.setTotalDistanceTraveled(droneState.getTotalDistanceTraveled() + distance);
+        droneState.setTotalDistanceTravelled(droneState.getTotalDistanceTravelled() + distance);
     }
 
     protected abstract Point calculateNewPosition(Point currentPosition);

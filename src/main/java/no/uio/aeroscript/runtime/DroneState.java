@@ -10,7 +10,7 @@ public class DroneState {
     private Float currentPointingDirection;
     private Float batteryLevel;
     private boolean isFlying;
-    private Float totalDistanceTraveled;
+    private Float totalDistanceTravelled;
 
     private static DroneState instance = null;
 
@@ -21,7 +21,7 @@ public class DroneState {
         this.currentPointingDirection = 0.0f; // Default pointing direction (0 degrees)
         this.batteryLevel = 100.0f; // Battery level in percentage (100% full)
         this.isFlying = false;
-        this.totalDistanceTraveled = 0.0f; 
+        this.totalDistanceTravelled = 0.0f; 
     }
 
     public Point getCurrentPosition() { return currentPosition; }
@@ -29,7 +29,7 @@ public class DroneState {
     public Float getBatteryLevel() { return batteryLevel; }
     public Float getCurrentPointingDirection() { return currentPointingDirection; }
     public boolean isFlying() { return isFlying;}
-    public Float getTotalDistanceTraveled() { return totalDistanceTraveled;}
+    public Float getTotalDistanceTravelled() { return totalDistanceTravelled;}
 
     public static DroneState getInstance() {
         if (instance == null) {
@@ -42,7 +42,7 @@ public class DroneState {
     public void setCurrentAltitude(Float currentAltitude) { this.currentAltitude = currentAltitude; }
     public void setBatteryLevel(Float batteryLevel) { this.batteryLevel = batteryLevel; }
     public void setFlying(boolean flying) { isFlying = flying; }
-    public void setTotalDistanceTraveled(Float totalDistanceTraveled) { this.totalDistanceTraveled = totalDistanceTraveled; }
+    public void setTotalDistanceTravelled(Float totalDistanceTravelled) { this.totalDistanceTravelled = totalDistanceTravelled; }
     public void setCurrentPointingDirection(Float currentPointingDirection) { this.currentPointingDirection = currentPointingDirection; }
     public void goToBase() { 
         currentPosition = base; 
@@ -59,7 +59,7 @@ public class DroneState {
                 ", currentPointingDirection=" + currentPointingDirection.toString() +
                 ", batteryLevel=" + batteryLevel.toString() +
                 ", isFlying=" + isFlying +
-                ", totalDistanceTraveled=" + totalDistanceTraveled.toString() +
+                ", totalDistanceTravelled=" + totalDistanceTravelled.toString() +
                 '}';
     }
 

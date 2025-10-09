@@ -48,10 +48,6 @@ public class Main {
             initialPosition = new Point(0.0f, 0.0f);
         }
 
-        float initialX = initialPosition.getX();
-        float initialY = initialPosition.getY();
-        float initialZ = 0.0f;
-
         HashMap<Memory, HashMap<String, Object>> variables = new HashMap<>();
         variables.put(Memory.VARIABLES, new HashMap<>());
         HashMap<String, Object> vars = variables.get(Memory.VARIABLES);
@@ -74,9 +70,21 @@ public class Main {
                 AeroScriptParser.ProgramContext programContext = parser.program();
 
                 Interpreter interpreter = new Interpreter(heap, stack);
-                // Continue implementation for the interpreter
+                ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
+                interpreter.executeProgram(modes);
 
-                // Print the initial position, initial battery capacity, final position, final battery level and distance travelled here
+                @SuppressWarnings("unchecked")
+                HashMap<String, Object> finalVars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
+                Point finalPosition = (Point) finalVars.get("current position");
+                Float initialBatteryLevel = (Float) finalVars.get("initial battery level");
+                Float finalBatteryLevel = (Float) finalVars.get("battery level");
+                Float distanceTravelled = (Float) finalVars.get("distance travelled");
+
+                System.out.println("Initial Position: " + initialPosition);
+                System.out.println("Initial Battery Level: " + initialBatteryLevel + "%");
+                System.out.println("Final Position: " + finalPosition);
+                System.out.println("Final Battery Level: " + finalBatteryLevel + "%");
+                System.out.println("Distance Travelled: " + distanceTravelled);
 
                 System.out.println("Execution complete!");
             } catch (ParseCancellationException e) {
