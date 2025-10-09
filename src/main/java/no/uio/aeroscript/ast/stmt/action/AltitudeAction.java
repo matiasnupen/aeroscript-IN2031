@@ -5,14 +5,13 @@ import no.uio.aeroscript.ast.stmt.Action;
 import no.uio.aeroscript.runtime.DroneState;
 
 public abstract class AltitudeAction extends Action {
-    
-    protected static final Float ALTITUDE_BATTERY_MULTIPLIER = 0.6f;
 
     protected AltitudeAction(DroneState droneState, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
         super(droneState, numberSpeedExpression, numberDurationExpression);
     }
 
     public static class Ascend extends AltitudeAction {
+        protected static final Float ASCENDING_BATTERY_MULTIPLIER = 0.6f;
         private final NumberExpression numberAscendingExpression;
 
         public Ascend(DroneState droneState, NumberExpression numberAscendingExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -29,13 +28,7 @@ public abstract class AltitudeAction extends Action {
         @Override
         protected Float calculateBatteryCost() {
             Float ascending = Float.parseFloat(numberAscendingExpression.evaluate().toString());
-            return getBaseBatteryCost() + (ascending * ALTITUDE_BATTERY_MULTIPLIER);
-        }
-
-        @Override
-        protected Float getDefaultDuration() {
-            Float ascending = Float.parseFloat(numberAscendingExpression.evaluate().toString());
-            return ascending / getSpeed();
+            return getBaseBatteryCost() + (ascending * ASCENDING_BATTERY_MULTIPLIER);
         }
 
         @Override
@@ -45,6 +38,7 @@ public abstract class AltitudeAction extends Action {
     }
 
     public static class Descend extends AltitudeAction {
+        protected static final Float DESCENDING_BATTERY_MULTIPLIER = 0.2f;
         private final NumberExpression numberDescendingExpression;
 
         public Descend(DroneState droneState, NumberExpression numberDescendingExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -61,13 +55,7 @@ public abstract class AltitudeAction extends Action {
         @Override
         protected Float calculateBatteryCost() {
             Float descending = Float.parseFloat(numberDescendingExpression.evaluate().toString());
-            return getBaseBatteryCost() + (descending * ALTITUDE_BATTERY_MULTIPLIER);
-        }
-
-        @Override
-        protected Float getDefaultDuration() {
-            Float descending = Float.parseFloat(numberDescendingExpression.evaluate().toString());
-            return descending / getSpeed();
+            return getBaseBatteryCost() + (descending * DESCENDING_BATTERY_MULTIPLIER);
         }
 
         @Override
@@ -77,6 +65,7 @@ public abstract class AltitudeAction extends Action {
     }
 
     public static class DescendToGround extends AltitudeAction {
+        protected static final Float DESCENDING_BATTERY_MULTIPLIER = 0.2f;
 
         public DescendToGround(DroneState droneState, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
             super(droneState, numberSpeedExpression, numberDurationExpression);
@@ -90,13 +79,7 @@ public abstract class AltitudeAction extends Action {
         @Override
         protected Float calculateBatteryCost() {
             Float descending = droneState.getCurrentAltitude();
-            return getBaseBatteryCost() + (descending * ALTITUDE_BATTERY_MULTIPLIER);
-        }
-
-        @Override
-        protected Float getDefaultDuration() {
-            Float descending = droneState.getCurrentAltitude();
-            return descending / getSpeed();
+            return getBaseBatteryCost() + (descending * DESCENDING_BATTERY_MULTIPLIER);
         }
 
         @Override

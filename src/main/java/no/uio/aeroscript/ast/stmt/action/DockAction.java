@@ -19,12 +19,7 @@ public class DockAction extends Action {
     protected Float calculateBatteryCost() {
         return getBaseBatteryCost() + droneState.getCurrentAltitude();
     }
-
-    @Override
-    protected Float getDefaultDuration() {
-        return droneState.getCurrentAltitude() / getSpeed();
-    }
-
+    
     @Override
     public String toString() {
         return "DockAction{}";

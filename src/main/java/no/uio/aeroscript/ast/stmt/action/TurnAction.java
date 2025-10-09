@@ -27,13 +27,8 @@ public abstract class TurnAction extends Action {
     @Override
     protected Float calculateBatteryCost() {
         Float degrees = Float.parseFloat(numberDegreesExpression.evaluate().toString());
+        System.out.println("Turning " + this.getClass().getSimpleName() + " by " + degrees + " degrees.");
         return getBaseBatteryCost() + (degrees * TURN_BATTERY_MULTIPLIER);
-    }
-
-    @Override
-    protected Float getDefaultDuration() {
-        Float degrees = Float.parseFloat(numberDegreesExpression.evaluate().toString());
-        return degrees / getSpeed();
     }
 
     public static class Left extends TurnAction {

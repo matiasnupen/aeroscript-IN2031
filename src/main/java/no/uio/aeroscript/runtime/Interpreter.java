@@ -39,8 +39,6 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         this.stack = stack;
     }
 
-
-
     private Object getVariable(String varName) {
         HashMap<String, Object> vars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
         return vars.get(varName);
@@ -189,7 +187,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         setVariable("distance travelled", droneState.getTotalDistanceTravelled());
 
         // Check for low battery condition
-        if (droneState.getBatteryLevel() <= 10.0f) {
+        if (droneState.getBatteryLevel() <= 20.0f) {
             setVariable("battery low", true);
         }
     }
@@ -204,6 +202,13 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     }
     
     public void executeProgram(ArrayList<Mode> modes) {
+        // Initialize DroneState with heap values before execution
+        DroneState droneState = DroneState.getInstance();
+        droneState.setCurrentPosition((Point) getVariable("initial position"));
+        droneState.setBatteryLevel((Float) getVariable("initial battery level"));
+        droneState.setCurrentAltitude((Float) getVariable("altitude"));
+        droneState.setTotalDistanceTravelled((Float) getVariable("distance travelled"));
+        
         // Find the initial mode and execute it
         Mode initialMode = null;
         for (Mode mode : modes) {

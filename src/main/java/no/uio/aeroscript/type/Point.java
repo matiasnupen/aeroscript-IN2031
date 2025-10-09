@@ -27,4 +27,9 @@ public class Point {
         Float distanceY = this.y - other.y; 
         return (float) Math.max(Math.abs(distanceX), Math.abs(distanceY));
     }
+
+    @Override
+    public String toString() {
+        return "(" + x + ", " + y + ")";
+    }
 }

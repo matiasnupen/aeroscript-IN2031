@@ -34,15 +34,8 @@ public abstract class MoveAction extends Action {
         return getBaseBatteryCost() + (distance * DISTANCE_BATTERY_MULTIPLIER);
     }
 
-    @Override
-    protected Float getDefaultDuration() {
-        Point currentPosition = droneState.getCurrentPosition();
-        Point newPosition = calculateNewPosition(currentPosition);
-        Float distance = currentPosition.distanceTo(newPosition);
-        return distance / getSpeed();
-    }
-
     public static class ByDistance extends MoveAction {
+        protected static final Float DISTANCE_BATTERY_MULTIPLIER = 0.7f;
         private final NumberExpression numberDistanceExpression;
 
         public ByDistance(DroneState droneState, NumberExpression numberDistanceExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -64,6 +57,7 @@ public abstract class MoveAction extends Action {
     }
 
     public static class ByPoint extends MoveAction {
+        protected static final Float DISTANCE_BATTERY_MULTIPLIER = 0.7f;
         private final PointExpression pointExpression;
 
         public ByPoint(DroneState droneState, PointExpression pointExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
