@@ -11,7 +11,7 @@ public abstract class AltitudeAction extends Action {
     }
 
     public static class Ascend extends AltitudeAction {
-        protected static final Float ASCENDING_BATTERY_MULTIPLIER = 0.6f;
+        protected static final Float ASCENDING_BATTERY_MULTIPLIER = 0.06f;
         private final NumberExpression numberAscendingExpression;
 
         public Ascend(DroneState droneState, NumberExpression numberAscendingExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -21,6 +21,7 @@ public abstract class AltitudeAction extends Action {
 
         @Override
         protected void executeAction() {
+            super.executeAction();
             Float ascending = Float.parseFloat(numberAscendingExpression.evaluate().toString());
             droneState.setCurrentAltitude(droneState.getCurrentAltitude() + ascending);
         }
@@ -32,13 +33,21 @@ public abstract class AltitudeAction extends Action {
         }
 
         @Override
+        protected String getDetailedActionInfo() {
+            Float ascending = Float.parseFloat(numberAscendingExpression.evaluate().toString());
+            Float currentAltitude = droneState.getCurrentAltitude();
+            Float newAltitude = currentAltitude + ascending;
+            return "ASCEND by distance=" + ascending + ", from_altitude=" + currentAltitude + " to_altitude=" + newAltitude + ", battery_multiplier=" + ASCENDING_BATTERY_MULTIPLIER;
+        }
+
+        @Override
         public String toString() {
             return "AltitudeAction.Ascend{numberAscendingExpression=" + numberAscendingExpression.toString() + '}';
         }
     }
 
     public static class Descend extends AltitudeAction {
-        protected static final Float DESCENDING_BATTERY_MULTIPLIER = 0.2f;
+        protected static final Float DESCENDING_BATTERY_MULTIPLIER = 0.02f;
         private final NumberExpression numberDescendingExpression;
 
         public Descend(DroneState droneState, NumberExpression numberDescendingExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -48,6 +57,7 @@ public abstract class AltitudeAction extends Action {
 
         @Override
         protected void executeAction() {
+            super.executeAction();
             Float descending = Float.parseFloat(numberDescendingExpression.evaluate().toString());
             droneState.setCurrentAltitude(droneState.getCurrentAltitude() - descending);
         }
@@ -56,6 +66,14 @@ public abstract class AltitudeAction extends Action {
         protected Float calculateBatteryCost() {
             Float descending = Float.parseFloat(numberDescendingExpression.evaluate().toString());
             return getBaseBatteryCost() + (descending * DESCENDING_BATTERY_MULTIPLIER);
+        }
+
+        @Override
+        protected String getDetailedActionInfo() {
+            Float descending = Float.parseFloat(numberDescendingExpression.evaluate().toString());
+            Float currentAltitude = droneState.getCurrentAltitude();
+            Float newAltitude = currentAltitude - descending;
+            return "DESCEND by distance=" + descending + ", from_altitude=" + currentAltitude + " to_altitude=" + newAltitude + ", battery_multiplier=" + DESCENDING_BATTERY_MULTIPLIER;
         }
 
         @Override
@@ -73,6 +91,7 @@ public abstract class AltitudeAction extends Action {
 
         @Override
         protected void executeAction() {
+            super.executeAction();
             droneState.setCurrentAltitude(0.0f);
         }
 
@@ -80,6 +99,12 @@ public abstract class AltitudeAction extends Action {
         protected Float calculateBatteryCost() {
             Float descending = droneState.getCurrentAltitude();
             return getBaseBatteryCost() + (descending * DESCENDING_BATTERY_MULTIPLIER);
+        }
+
+        @Override
+        protected String getDetailedActionInfo() {
+            Float currentAltitude = droneState.getCurrentAltitude();
+            return "DESCEND TO GROUND from_altitude=" + currentAltitude + " to_altitude=0.0, total_descending=" + currentAltitude + ", battery_multiplier=" + DESCENDING_BATTERY_MULTIPLIER;
         }
 
         @Override

@@ -6,7 +6,7 @@ import no.uio.aeroscript.runtime.DroneState;
 
 public abstract class TurnAction extends Action {
 
-    protected static final Float TURN_BATTERY_MULTIPLIER = 0.3f;
+    protected static final Float TURN_BATTERY_MULTIPLIER = 0.03f;
     protected final NumberExpression numberDegreesExpression;
 
     protected TurnAction(DroneState droneState, NumberExpression numberDegreesExpression, NumberExpression numberSpeedExpression, NumberExpression numberDurationExpression) {
@@ -16,6 +16,7 @@ public abstract class TurnAction extends Action {
 
     @Override
     protected void executeAction() {
+        super.executeAction();
         Float degrees = Float.parseFloat(numberDegreesExpression.evaluate().toString());
         Float currentPointingDirection = droneState.getCurrentPointingDirection();
         Float newPointingDirection = calculateNewDirection(currentPointingDirection, degrees);
@@ -42,6 +43,14 @@ public abstract class TurnAction extends Action {
         }
 
         @Override
+        protected String getDetailedActionInfo() {
+            Float degrees = Float.parseFloat(numberDegreesExpression.evaluate().toString());
+            Float currentDirection = droneState.getCurrentPointingDirection();
+            Float newDirection = calculateNewDirection(currentDirection, degrees);
+            return "Turn LEFT by degrees=" + degrees + ", from_direction=" + currentDirection + "° to_direction=" + newDirection + "°, battery_multiplier=" + TURN_BATTERY_MULTIPLIER;
+        }
+
+        @Override
         public String toString() {
             return "TurnAction.Left{numberDegreesExpression=" + numberDegreesExpression.toString() + '}';
         }
@@ -55,6 +64,14 @@ public abstract class TurnAction extends Action {
         @Override
         protected Float calculateNewDirection(Float currentDirection, Float degrees) {
             return currentDirection + degrees;
+        }
+
+        @Override
+        protected String getDetailedActionInfo() {
+            Float degrees = Float.parseFloat(numberDegreesExpression.evaluate().toString());
+            Float currentDirection = droneState.getCurrentPointingDirection();
+            Float newDirection = calculateNewDirection(currentDirection, degrees);
+            return "Turn RIGHT by degrees=" + degrees + ", from_direction=" + currentDirection + "° to_direction=" + newDirection + "°, battery_multiplier=" + TURN_BATTERY_MULTIPLIER;
         }
 
         @Override

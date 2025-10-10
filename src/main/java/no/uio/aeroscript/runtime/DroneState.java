@@ -4,7 +4,7 @@ import no.uio.aeroscript.type.Point;
 
 public class DroneState {
 
-    private Point base;
+    private final Point base;
     private Point currentPosition;
     private Float currentAltitude;
     private Float currentPointingDirection;
@@ -47,7 +47,7 @@ public class DroneState {
     public void goToBase() { 
         currentPosition = base; 
         currentAltitude = 0.0f; 
-        isFlying = false; 
+        isFlying = false;
     }
 
     @Override

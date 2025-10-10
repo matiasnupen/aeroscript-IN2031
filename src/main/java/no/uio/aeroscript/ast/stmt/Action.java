@@ -16,7 +16,7 @@ public abstract class Action extends Statement{
     }
 
     @Override
-    public final void execute() {
+    public final void execute() {       
         executeAction();
         consumeBattery();
     }
@@ -29,19 +29,27 @@ public abstract class Action extends Statement{
         this.numberDurationExpression = numberDurationExpression;
     }
 
-    protected abstract void executeAction();
+    protected void executeAction() {
+        // Logging action execution details
+        System.out.println("=== ACTION EXECUTION LOG ===");
+        System.out.println("Action Type: " + this.getClass().getSimpleName());
+        System.out.println("Point before execution: " + droneState.getCurrentPosition() + ", Altitude: " + droneState.getCurrentAltitude() + ", Direction: " + droneState.getCurrentPointingDirection() + "°");
+        System.out.println("Base Variables: Speed=" + getSpeed() + ", Duration=" + getDuration());
+        System.out.println("Action Details: " + getDetailedActionInfo());
+    }
 
     protected abstract Float calculateBatteryCost();
+    
+    protected abstract String getDetailedActionInfo();
 
     private void consumeBattery() {
         Float batteryCost = calculateBatteryCost();
         Float newBatteryLevel = droneState.getBatteryLevel() - batteryCost;
 
-        System.out.println("Action: " + this.getClass().getSimpleName() +
-                ", Speed: " + getSpeed() +
-                ", Duration: " + getDuration() +
-                ", Battery Cost: " + batteryCost +
-                ", New Battery Level: " + newBatteryLevel);
+        // Logging battery consumption details + details after execution
+        System.out.println("Battery: Cost=" + batteryCost + ", Current batteryLevel: " + droneState.getBatteryLevel() + "% -> " + newBatteryLevel + "%");
+        System.out.println("Point after execution: " + droneState.getCurrentPosition() + ", Altitude: " + droneState.getCurrentAltitude() + ", Direction: " + droneState.getCurrentPointingDirection() + "°");
+        System.out.println("============================");
         
         newBatteryLevel = Math.max(0.0f, newBatteryLevel); // Prevent battery level from going below 0%
         droneState.setBatteryLevel(newBatteryLevel);
@@ -60,6 +68,6 @@ public abstract class Action extends Statement{
     }
 
     protected Float getBaseBatteryCost() {
-        return (getDuration() * 0.1f) + (getSpeed() * 1.0f);
+        return (getDuration() * 0.01f) + (getSpeed() * 0.1f);
     }
 }
