@@ -69,7 +69,7 @@ public abstract class Action extends Statement{
         droneState.setBatteryLevel(newBatteryLevel);
 
         if (newBatteryLevel <= 20.0f) {
-            System.out.println("WARNING: Low battery! Battery level: " + newBatteryLevel + "%");
+            System.out.println("\nWARNING: Low battery! Battery level: " + newBatteryLevel + "%\n");
         }
         
         // Throw exception if battery is now completely depleted

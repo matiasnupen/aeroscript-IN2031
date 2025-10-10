@@ -186,10 +186,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         setVariable("battery level", droneState.getBatteryLevel());
         setVariable("distance travelled", droneState.getTotalDistanceTravelled());
 
-        // Check for low battery condition
-        if (droneState.getBatteryLevel() <= 20.0f) {
-            setVariable("battery low", true);
-        }
+        // Low battery warning is already handled in Action.consumeBattery()
+        // Set variable for potential future use
+        setVariable("battery low", droneState.getBatteryLevel() <= 20.0f);
     }
     
     public void executeMode(Mode mode) throws BatteryDepletedException {
@@ -244,7 +243,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             try {
                 executeMode(initialMode);
                 
-                // Handle mode transitions if needed
+
                 String nextModeName = initialMode.getNextModeName();
                 while (nextModeName != null) {
                     // Check battery before mode transition
