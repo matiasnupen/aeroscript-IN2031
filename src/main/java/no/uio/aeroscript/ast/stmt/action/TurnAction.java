@@ -14,6 +14,16 @@ public abstract class TurnAction extends Action {
         this.numberDegreesExpression = numberDegreesExpression;
     }
 
+    protected Float normalizeDirection(Float direction) {
+        while (direction < 0.0f) {
+            direction += 360.0f;
+        }
+        while (direction >= 360.0f) {
+            direction -= 360.0f;
+        }
+        return direction;
+    }
+
     @Override
     protected void executeAction() {
         super.executeAction();
@@ -39,7 +49,8 @@ public abstract class TurnAction extends Action {
 
         @Override
         protected Float calculateNewDirection(Float currentDirection, Float degrees) {
-            return currentDirection - degrees;
+            Float newDirection = currentDirection - degrees;
+            return normalizeDirection(newDirection);
         }
 
         @Override
@@ -63,7 +74,8 @@ public abstract class TurnAction extends Action {
 
         @Override
         protected Float calculateNewDirection(Float currentDirection, Float degrees) {
-            return currentDirection + degrees;
+            Float newDirection = currentDirection + degrees;
+            return normalizeDirection(newDirection);
         }
 
         @Override
