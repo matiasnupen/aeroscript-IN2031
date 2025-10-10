@@ -192,13 +192,31 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
     
-    public void executeMode(Mode mode) {
+    public void executeMode(Mode mode) throws BatteryDepletedException {
+        System.out.println("\n>>> ENTERING MODE: " + mode.getName() + " <<<");
+        DroneState droneState = DroneState.getInstance();
+
         // Execute all statements in this mode
         for (Statement statement : mode.getStatements()) {
+            // Pre-check battery level before attempting action
+            if (droneState.getBatteryLevel() <= 0.0f) {
+                throw new BatteryDepletedException(droneState.getBatteryLevel(), "PreCheck");
+            }
+
             if (statement instanceof Action) {
-                executeAction((Action) statement);
+                try {
+                    executeAction((Action) statement);
+                } catch (BatteryDepletedException e) {
+                    System.out.println("\n*** BATTERY DEPLETION DETECTED ***");
+                    System.out.println("Mode: " + mode.getName());
+                    System.out.println("Reason: " + e.getMessage());
+                    System.out.println("*** TERMINATING EXECUTION ***\n");
+                    throw e; // Re-throw to stop execution at higher level
+                }
             }
         }
+        
+        System.out.println(">>> MODE COMPLETED: " + mode.getName() + " <<<\n");
     }
     
     public void executeProgram(ArrayList<Mode> modes) {
@@ -208,6 +226,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         droneState.setBatteryLevel((Float) getVariable("initial battery level"));
         droneState.setCurrentAltitude((Float) getVariable("altitude"));
         droneState.setTotalDistanceTravelled((Float) getVariable("distance travelled"));
+        
+        System.out.println("=== AEROSCRIPT PROGRAM EXECUTION STARTED ===");
+        System.out.println("Initial Battery Level: " + droneState.getBatteryLevel() + "%");
+        System.out.println("Initial Position: " + droneState.getCurrentPosition());
         
         // Find the initial mode and execute it
         Mode initialMode = null;
@@ -219,20 +241,45 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
         
         if (initialMode != null) {
-            executeMode(initialMode);
-            
-            // Handle mode transitions if needed
-            String nextModeName = initialMode.getNextModeName();
-            while (nextModeName != null) {
-                Mode nextMode = findModeByName(modes, nextModeName);
-                if (nextMode != null) {
-                    executeMode(nextMode);
-                    nextModeName = nextMode.getNextModeName();
-                } else {
-                    break;
+            try {
+                executeMode(initialMode);
+                
+                // Handle mode transitions if needed
+                String nextModeName = initialMode.getNextModeName();
+                while (nextModeName != null) {
+                    // Check battery before mode transition
+                    if (droneState.getBatteryLevel() <= 0.0f) {
+                        throw new BatteryDepletedException(droneState.getBatteryLevel(), "ModeTransition");
+                    }
+                    
+                    Mode nextMode = findModeByName(modes, nextModeName);
+                    if (nextMode != null) {
+                        executeMode(nextMode);
+                        nextModeName = nextMode.getNextModeName();
+                    } else {
+                        System.out.println("WARNING: Next mode '" + nextModeName + "' not found. Terminating.");
+                        break;
+                    }
                 }
+                
+                System.out.println("\n=== PROGRAM COMPLETED SUCCESSFULLY ===");
+                
+            } catch (BatteryDepletedException e) {
+                System.out.println("\n=== PROGRAM TERMINATED DUE TO BATTERY DEPLETION ===");
+                System.out.println("Final Status: " + e.getMessage());
+                System.out.println("Final Battery Level: " + e.getCurrentBatteryLevel() + "%");
             }
+        } else {
+            System.out.println("ERROR: No initial mode found in program!");
         }
+        
+        // Print final drone state
+        System.out.println("\n=== FINAL DRONE STATE ===");
+        System.out.println("Position: " + droneState.getCurrentPosition());
+        System.out.println("Altitude: " + droneState.getCurrentAltitude());
+        System.out.println("Battery Level: " + droneState.getBatteryLevel() + "%");
+        System.out.println("Total Distance Travelled: " + droneState.getTotalDistanceTravelled());
+        System.out.println("========================");
     }
     
     private Mode findModeByName(ArrayList<Mode> modes, String name) {

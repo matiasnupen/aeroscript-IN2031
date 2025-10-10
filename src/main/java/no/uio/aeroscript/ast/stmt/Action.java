@@ -44,10 +44,24 @@ public abstract class Action extends Statement{
 
     private void consumeBattery() {
         Float batteryCost = calculateBatteryCost();
-        Float newBatteryLevel = droneState.getBatteryLevel() - batteryCost;
+        Float currentBatteryLevel = droneState.getBatteryLevel();
+        Float newBatteryLevel = currentBatteryLevel - batteryCost;
+
+        // Check if there's sufficient battery before executing the action
+        if (currentBatteryLevel <= 0.0f) {
+            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+                currentBatteryLevel, this.getClass().getSimpleName()
+            );
+        }
+        
+        if (batteryCost > currentBatteryLevel) {
+            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+                currentBatteryLevel, batteryCost, this.getClass().getSimpleName()
+            );
+        }
 
         // Logging battery consumption details + details after execution
-        System.out.println("Battery: Cost=" + batteryCost + ", Current batteryLevel: " + droneState.getBatteryLevel() + "% -> " + newBatteryLevel + "%");
+        System.out.println("Battery: Cost=" + batteryCost + ", Current batteryLevel: " + currentBatteryLevel + "% -> " + newBatteryLevel + "%");
         System.out.println("Point after execution: " + droneState.getCurrentPosition() + ", Altitude: " + droneState.getCurrentAltitude() + ", Direction: " + droneState.getCurrentPointingDirection() + "°");
         System.out.println("============================");
         
@@ -56,6 +70,13 @@ public abstract class Action extends Statement{
 
         if (newBatteryLevel <= 20.0f) {
             System.out.println("WARNING: Low battery! Battery level: " + newBatteryLevel + "%");
+        }
+        
+        // Throw exception if battery is now completely depleted
+        if (newBatteryLevel <= 0.0f) {
+            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+                newBatteryLevel, this.getClass().getSimpleName()
+            );
         }
     }
 
