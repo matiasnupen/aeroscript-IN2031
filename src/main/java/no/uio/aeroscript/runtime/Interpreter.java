@@ -130,7 +130,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             // TURN LEFT
             return new TurnAction.Left(droneState, numberDegreesExpression, null, null);
         } else {
-            // TURN RIGHT
+            // TURN RIGHT (default when direction not specified or RIGHT explicitly given)
             return new TurnAction.Right(droneState, numberDegreesExpression, null, null);
         } 
     }
@@ -151,7 +151,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         } else if (ctx.acDescend() != null) {
             action = visitAcDescend(ctx.acDescend());
         }
-        
+
         // Handle optional duration and speed modifiers
         if (ctx.getChildCount() > 1) {
             ParseTree modifierStart = ctx.getChild(1);
@@ -297,7 +297,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
     @Override
     public Mode visitModeDecl(AeroScriptParser.ModeDeclContext ctx) {
-        boolean isInitial = ctx.ARROW(0) != null;
+        boolean isInitial = ctx.getChild(0).getText().equals("->");
         String name = ctx.ID(0).getText();
 
         List<Statement> statements = new ArrayList<>();
