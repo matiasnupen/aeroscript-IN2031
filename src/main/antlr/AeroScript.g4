@@ -47,7 +47,13 @@ SECONDS : 'seconds';
 AT      : 'at';
 SPEED   : 'speed';
 
-// Keywords
+// Keyword for reactions
+ON      : 'on';
+OBSTACLE : 'obstacle';
+LOW_BATTERY : 'low_battery';
+MESSAGE : 'message';
+
+// Keywords for identifiers and literals
 ID: [a-zA-Z_]+; // Allow underscore in ID
 NUMBER: [0-9]+('.'[0-9]+)?;
 
@@ -65,7 +71,7 @@ program : modeDecl+ ;
 modeDecl : ARROW? ID LCURL statement* RCURL (ARROW ID)?;
 
 // declare statements
-statement : action ;
+statement : action | reaction ;
 
 /** Declare actions 
 *  An action can be one of the five actions defined below
@@ -82,6 +88,13 @@ acMove    : MOVE ( TO POINT point | BY NUMBER ) ;
 acTurn    : TURN ( RIGHT | LEFT )? BY expression ;
 acAscend  : ASCEND BY expression ;
 acDescend : DESCEND BY expression | DESCEND TO GROUND ;
+
+
+// Define reactions
+reaction : ON event ARROW ID ;
+
+// Define events
+event : OBSTACLE | LOW_BATTERY | MESSAGE LSQUARE ID RSQUARE ;
 
 // Define expressions
 expression : NEG expression #NegExp

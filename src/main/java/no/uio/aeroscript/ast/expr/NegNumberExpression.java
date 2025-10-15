@@ -1,7 +1,6 @@
 package no.uio.aeroscript.ast.expr;
 
 public class NegNumberExpression extends Expression {
-    // Implement the NumberNode class to handle numbers
 
     /** The NegNumberExpression is supposed to handle unary negation of numbers
      * for example: -5 or -(3 + 2)

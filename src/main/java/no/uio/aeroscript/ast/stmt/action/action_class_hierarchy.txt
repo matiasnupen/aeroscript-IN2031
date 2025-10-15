@@ -1,0 +1,133 @@
+ACTION CLASS HIERARCHY ILLUSTRATION
+==================================
+
+                                                  Statement (abstract)
+                                                       |
+                                                    Action (abstract)
+                                                       |
+                 +-------------------------------------+----------------------+-------------------+
+                 |                                     |                      |                   |
+          AltitudeAction                           MoveAction             TurnAction         DockAction
+           (abstract)                              (abstract)             (abstract)         (concrete)
+                 |                                     |                      |
+    +------------+------------+                 +------+------+          +----+----+
+    |            |            |                 |             |          |         |
+ Ascend       Descend    DescendToGround   ByDistance       ByPoint      Left   Right
+
+
+
+
+Got help with this detailed class structure using AI (Claude Sonnet 4)
+Using this prompt: "Can you help me design a detailed class structure using these files and the hierarchy-tree as a .txt file?"
+
+DETAILED CLASS STRUCTURE: 
+========================
+
+Statement (abstract)
+├── + execute(): void (abstract)
+├── + toString(): String (abstract)
+
+Action (abstract) extends Statement
+├── # droneState: DroneState
+├── # numberSpeedExpression: NumberExpression  
+├── # numberDurationExpression: NumberExpression
+├── + execute(): void (final) - calls executeAction() and consumeBattery()
+├── # executeAction(): void - logs execution details
+├── # calculateBatteryCost(): Float (abstract)
+├── # getDetailedActionInfo(): String (abstract)
+├── + setSpeedExpression(NumberExpression): void
+├── + setDurationExpression(NumberExpression): void
+├── # getSpeed(): Float
+├── # getDuration(): Float
+├── # getBaseBatteryCost(): Float
+├── - consumeBattery(): void
+
+AltitudeAction (abstract) extends Action
+├── + constructor(DroneState, NumberExpression, NumberExpression)
+│
+├── Ascend (inner class, concrete) extends AltitudeAction
+│   ├── - ASCENDING_BATTERY_MULTIPLIER: Float = 0.06f
+│   ├── - numberAscendingExpression: NumberExpression
+│   ├── + executeAction(): void - increases altitude
+│   ├── + calculateBatteryCost(): Float - base cost + ascending distance * multiplier
+│   ├── + getDetailedActionInfo(): String
+│   └── + toString(): String
+│
+├── Descend (inner class, concrete) extends AltitudeAction  
+│   ├── - DESCENDING_BATTERY_MULTIPLIER: Float = 0.02f
+│   ├── - numberDescendingExpression: NumberExpression
+│   ├── + executeAction(): void - decreases altitude
+│   ├── + calculateBatteryCost(): Float - base cost + descending distance * multiplier
+│   ├── + getDetailedActionInfo(): String
+│   └── + toString(): String
+│
+└── DescendToGround (inner class, concrete) extends AltitudeAction
+    ├── - DESCENDING_BATTERY_MULTIPLIER: Float = 0.2f
+    ├── + executeAction(): void - sets altitude to 0
+    ├── + calculateBatteryCost(): Float - base cost + current altitude * multiplier
+    ├── + getDetailedActionInfo(): String
+    └── + toString(): String
+
+MoveAction (abstract) extends Action
+├── - DISTANCE_BATTERY_MULTIPLIER: Float = 0.05f
+├── + executeAction(): void - moves drone and updates distance travelled
+├── # calculateNewPosition(Point): Point (abstract)
+├── + calculateBatteryCost(): Float - base cost + distance * multiplier
+│
+├── ByDistance (inner class, concrete) extends MoveAction
+│   ├── - DISTANCE_BATTERY_MULTIPLIER: Float = 0.07f
+│   ├── - numberDistanceExpression: NumberExpression
+│   ├── - cachedDistance: Float
+│   ├── + calculateNewPosition(Point): Point - moves along x-axis
+│   ├── + getDetailedActionInfo(): String
+│   └── + toString(): String
+│
+└── ByPoint (inner class, concrete) extends MoveAction
+    ├── - DISTANCE_BATTERY_MULTIPLIER: Float = 0.07f
+    ├── - pointExpression: PointExpression
+    ├── - cachedTargetPoint: Point
+    ├── + calculateNewPosition(Point): Point - moves to specific point
+    ├── + getDetailedActionInfo(): String
+    └── + toString(): String
+
+TurnAction (abstract) extends Action
+├── - TURN_BATTERY_MULTIPLIER: Float = 0.03f
+├── # numberDegreesExpression: NumberExpression
+├── + executeAction(): void - changes drone direction
+├── # calculateNewDirection(Float, Float): Float (abstract)
+├── # normalizeDirection(Float): Float - keeps direction between 0-359°
+├── + calculateBatteryCost(): Float - base cost + degrees * multiplier
+│
+├── Left (inner class, concrete) extends TurnAction
+│   ├── + calculateNewDirection(Float, Float): Float - subtracts degrees
+│   ├── + getDetailedActionInfo(): String
+│   └── + toString(): String
+│
+└── Right (inner class, concrete) extends TurnAction
+    ├── + calculateNewDirection(Float, Float): Float - adds degrees
+    ├── + getDetailedActionInfo(): String
+    └── + toString(): String
+
+DockAction (concrete) extends Action
+├── - altitudeBeforeExecution: Float
+├── + executeAction(): void - moves drone to base
+├── + calculateBatteryCost(): Float - base cost + altitude cost
+├── + getDetailedActionInfo(): String
+└── + toString(): String
+
+
+KEY DESIGN PATTERNS:
+===================
+1. Template Method Pattern: Action.execute() defines the algorithm structure
+2. Abstract Factory Pattern: Different action types with specific implementations
+3. Inner Classes: Used for related action variants (e.g., AltitudeAction.Ascend)
+4. Polymorphism: All actions can be treated uniformly through Action interface
+
+
+INHERITANCE RELATIONSHIPS:
+=========================
+- Statement is the root abstract class
+- Action extends Statement and adds drone-specific functionality
+- Four main action categories: AltitudeAction, MoveAction, TurnAction, DockAction
+- Inner classes provide specific implementations for related actions
+- All concrete classes implement required abstract methods for their behavior
