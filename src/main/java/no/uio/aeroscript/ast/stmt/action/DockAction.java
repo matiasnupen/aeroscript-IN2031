@@ -24,7 +24,6 @@ public class DockAction extends Action {
         Float baseCost = getBaseBatteryCost();
         Float altitudeCost = altitudeBeforeExecution * 0.01f;
         Float totalCost = baseCost + altitudeCost;
-        System.out.println("DEBUG DockAction: baseCost=" + baseCost + ", altitudeCost=" + altitudeCost + ", totalCost=" + totalCost);
         return totalCost;
     }
     
