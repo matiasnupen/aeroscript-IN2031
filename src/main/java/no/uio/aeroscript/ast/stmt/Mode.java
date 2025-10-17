@@ -2,6 +2,8 @@ package no.uio.aeroscript.ast.stmt;
 
 import java.util.List;
 
+import no.uio.aeroscript.runtime.DroneState;
+
 public class Mode {
 
     private final String name;
@@ -23,9 +25,27 @@ public class Mode {
 
     public boolean hasTransition() { return nextModeName != null; }
 
+    public String checkReactions(DroneState droneState) {
+        for (Statement statement : statements) {
+            if (statement instanceof Reaction) {
+                Reaction reaction = (Reaction) statement;
+                if (reaction.isTriggered(droneState)) {
+                    return reaction.getTargetModeName();
+                }
+            }
+        }
+        return null;
+    }
+
     public void executeStatements() {
         for (Statement statement : statements) {
-            statement.execute();
+            if (statement instanceof Action) {
+                // Execute action
+                statement.execute();
+            } else if (statement instanceof Reaction) {
+                // Register reaction for this mode
+                // Implementation depends on the broader context of the interpreter
+            }
         }
     }
 

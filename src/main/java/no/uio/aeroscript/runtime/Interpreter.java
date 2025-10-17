@@ -18,12 +18,17 @@ import no.uio.aeroscript.ast.expr.OperationExpression;
 import no.uio.aeroscript.ast.expr.PointExpression;
 import no.uio.aeroscript.ast.expr.RangeExpression;
 import no.uio.aeroscript.ast.stmt.Action;
+import no.uio.aeroscript.ast.stmt.Event;
 import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.ast.stmt.Reaction;
 import no.uio.aeroscript.ast.stmt.Statement;
 import no.uio.aeroscript.ast.stmt.action.AltitudeAction;
 import no.uio.aeroscript.ast.stmt.action.DockAction;
 import no.uio.aeroscript.ast.stmt.action.MoveAction;
 import no.uio.aeroscript.ast.stmt.action.TurnAction;
+import no.uio.aeroscript.ast.stmt.event.LowBatteryEvent;
+import no.uio.aeroscript.ast.stmt.event.MessageEvent;
+import no.uio.aeroscript.ast.stmt.event.ObstacleEvent;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 import no.uio.aeroscript.type.Range;
@@ -323,6 +328,27 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             modes.add(mode);
         }
         return modes;
+    }
+
+    /* Reaction & Events */
+    @Override
+    public Reaction visitReaction(AeroScriptParser.ReactionContext ctx) {
+        Event event = (Event) visitEvent(ctx.event());
+        String targetModeName = ctx.ID().getText();
+        return new Reaction(event, targetModeName);
+    }
+
+    @Override
+    public Event visitEvent(AeroScriptParser.EventContext ctx) {
+        if (ctx.OBSTACLE() != null) {
+            return new ObstacleEvent();
+        } else if (ctx.LOW_BATTERY() != null) {
+            return new LowBatteryEvent();
+        } else if (ctx.MESSAGE() != null) {
+            String messageId = ctx.ID().getText();
+            return new MessageEvent(messageId);
+        }
+        throw new IllegalArgumentException("Unknown event type");
     }
 
     /* Expressions */
