@@ -1,5 +1,7 @@
 package no.uio.aeroscript;
 
+import java.util.logging.Logger;
+
 import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.stmt.Mode;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.Stack;
 
 public class Main {
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
     public static void main(String[] args) {
         System.setProperty("org.jline.terminal.dumb", "true");
         HashMap<Memory, Object> heap = new HashMap<>();
@@ -26,7 +29,7 @@ public class Main {
         Point initialPosition;
 
         if (args.length < 1) {
-            System.err.println("Usage: java -jar aeroscript.jar <path to file> [-b <battery level>] [-p <x> <y>]");
+            logger.warning("Usage: java -jar aeroscript.jar <path to file> [-b <battery level>] [-p <x> <y>]\n");
             System.exit(1);
         }
         String path = args[0];
@@ -80,18 +83,18 @@ public class Main {
                 Float finalBatteryLevel = (Float) finalVars.get("battery level");
                 Float distanceTravelled = (Float) finalVars.get("distance travelled");
 
-                System.out.println("Initial Position: " + initialPosition);
-                System.out.println("Initial Battery Level: " + initialBatteryLevel + "%");
-                System.out.println("Final Position: " + finalPosition);
-                System.out.println("Final Battery Level: " + finalBatteryLevel + "%");
-                System.out.println("Distance Travelled: " + distanceTravelled);
-
-                System.out.println("Execution complete!");
+                logger.info("SESSION COMPLETED" + 
+                "\n\t" + "Initial Position: " + initialPosition + 
+                "\n\t" + "Initial Battery Level: " + initialBatteryLevel + "%" +
+                "\n\t" + "Final Position: " + finalPosition +
+                "\n\t" + "Final Battery Level: " + finalBatteryLevel + "%" +
+                "\n\t" + "Distance Travelled: " + distanceTravelled + "\n"
+                );
             } catch (ParseCancellationException e) {
-                System.err.println("Parser error: " + e.getMessage());
+                logger.severe("Parser error: " + e.getMessage());
             }
         }  catch (/*IOException e*/Exception e) {
-            System.err.println("Error reading file: " + e.getMessage());
+            logger.severe("Error reading file: " + e.getMessage());
         }
     }
 }

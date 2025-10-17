@@ -1,9 +1,12 @@
 package no.uio.aeroscript.ast.stmt;
 
+import java.util.logging.Logger;
+
 import no.uio.aeroscript.ast.expr.NumberExpression;
 import no.uio.aeroscript.runtime.DroneState;
 
 public abstract class Action extends Statement{
+    private static final Logger logger = Logger.getLogger(Action.class.getName());
 
     protected DroneState droneState;
     protected NumberExpression numberSpeedExpression;
@@ -31,11 +34,16 @@ public abstract class Action extends Statement{
 
     protected void executeAction() {
         // Logging action execution details
-        System.out.println("=== ACTION EXECUTION LOG ===");
-        System.out.println("Action Type: " + this.getClass().getSimpleName());
-        System.out.println("Point before execution: " + droneState.getCurrentPosition() + ", Altitude: " + droneState.getCurrentAltitude() + ", Direction: " + droneState.getCurrentPointingDirection() + "°");
-        System.out.println("Base Variables: Speed=" + getSpeed() + ", Duration=" + getDuration());
-        System.out.println("Action Details: " + getDetailedActionInfo());
+
+        logger.info("EXECUTING ACTION: " + this.getClass().getSimpleName() + 
+        "\n\tPoint before execution: " + droneState.getCurrentPosition() + ", " +
+        "Altitude: " + droneState.getCurrentAltitude() + ", " +
+        "Direction: " + droneState.getCurrentPointingDirection() + "°" + 
+        "\n\tBase Variables: " + 
+        "Speed=" + getSpeed() + ", " + 
+        "Duration=" + getDuration() + 
+        "\n\tAction Details: " + getDetailedActionInfo() + "\n"
+        );
     }
 
     protected abstract Float calculateBatteryCost();
@@ -61,15 +69,19 @@ public abstract class Action extends Statement{
         }
 
         // Logging battery consumption details + details after execution
-        System.out.println("Battery: Cost=" + batteryCost + ", Current batteryLevel: " + currentBatteryLevel + "% -> " + newBatteryLevel + "%");
-        System.out.println("Point after execution: " + droneState.getCurrentPosition() + ", Altitude: " + droneState.getCurrentAltitude() + ", Direction: " + droneState.getCurrentPointingDirection() + "°");
-        System.out.println("============================");
+        logger.info("BATTERY: " + 
+        "\n\tCost=" + batteryCost + ", " + 
+        "\n\tCurrent batteryLevel: " + currentBatteryLevel + "% -> " + newBatteryLevel + "%" + 
+        "\n\tPoint after execution: " + droneState.getCurrentPosition() + ", " + 
+        "Altitude: " + droneState.getCurrentAltitude() + ", " + 
+        "Direction: " + droneState.getCurrentPointingDirection() + "°\n"
+        );
         
         newBatteryLevel = Math.max(0.0f, newBatteryLevel); // Prevent battery level from going below 0%
         droneState.setBatteryLevel(newBatteryLevel);
 
         if (newBatteryLevel <= 20.0f) {
-            System.out.println("\nWARNING: Low battery! Battery level: " + newBatteryLevel + "%\n");
+            logger.warning("Low battery! Battery level: " + newBatteryLevel + "%\n");
         }
         
         // Throw exception if battery is now completely depleted

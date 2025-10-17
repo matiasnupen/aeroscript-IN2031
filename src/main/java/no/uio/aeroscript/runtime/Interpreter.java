@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Logger;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -30,6 +31,8 @@ import no.uio.aeroscript.type.Range;
 /* For now, let us just ignore interrupts, will need to build
  * an interrupt lookup table and introduce a message queue later... */
 public class Interpreter extends AeroScriptBaseVisitor<Object> {
+    private static final Logger logger = Logger.getLogger(Interpreter.class.getName());
+
     private HashMap<Memory, Object> heap;
     private Stack<Statement> stack;
     private HashMap<String, ArrayList<Statement>> methodTable = new HashMap<>();
@@ -192,7 +195,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     }
     
     public void executeMode(Mode mode) throws BatteryDepletedException {
-        System.out.println("\n>>> ENTERING MODE: " + mode.getName() + " <<<");
+        logger.info("ENTERING MODE: " + mode.getName() + "\n");
         DroneState droneState = DroneState.getInstance();
 
         // Execute all statements in this mode
@@ -206,16 +209,17 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                 try {
                     executeAction((Action) statement);
                 } catch (BatteryDepletedException e) {
-                    System.out.println("\n*** BATTERY DEPLETION DETECTED ***");
-                    System.out.println("Mode: " + mode.getName());
-                    System.out.println("Reason: " + e.getMessage());
-                    System.out.println("*** TERMINATING EXECUTION ***\n");
+                    logger.warning("BATTERY DEPLETION DETECTED" + 
+                    "\n\tMode: " + mode.getName() + 
+                    "\n\tReason: " + e.getMessage() + 
+                    "\n\tTERMINATING EXECUTION\n"
+                    );
                     throw e; // Re-throw to stop execution at higher level
                 }
             }
         }
-        
-        System.out.println(">>> MODE COMPLETED: " + mode.getName() + " <<<\n");
+
+        logger.info("MODE COMPLETED: " + mode.getName() + "\n");
     }
     
     public void executeProgram(ArrayList<Mode> modes) {
@@ -226,10 +230,11 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         droneState.setCurrentAltitude((Float) getVariable("altitude"));
         droneState.setTotalDistanceTravelled((Float) getVariable("distance travelled"));
         
-        System.out.println("=== AEROSCRIPT PROGRAM EXECUTION STARTED ===");
-        System.out.println("Initial Battery Level: " + droneState.getBatteryLevel() + "%");
-        System.out.println("Initial Position: " + droneState.getCurrentPosition());
-        
+        logger.info("AEROSCRIPT PROGRAM EXECUTION STARTED" + 
+        "\n\tInitial Battery Level: " + droneState.getBatteryLevel() + "%" + 
+        "\n\tInitial Position: " + droneState.getCurrentPosition() + "\n"
+        );
+
         // Find the initial mode and execute it
         Mode initialMode = null;
         for (Mode mode : modes) {
@@ -256,29 +261,22 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                         executeMode(nextMode);
                         nextModeName = nextMode.getNextModeName();
                     } else {
-                        System.out.println("WARNING: Next mode '" + nextModeName + "' not found. Terminating.");
+                        logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
                         break;
                     }
                 }
-                
-                System.out.println("\n=== PROGRAM COMPLETED SUCCESSFULLY ===");
-                
+
+                logger.info("PROGRAM COMPLETED SUCCESSFULLY\n");
+
             } catch (BatteryDepletedException e) {
-                System.out.println("\n=== PROGRAM TERMINATED DUE TO BATTERY DEPLETION ===");
-                System.out.println("Final Status: " + e.getMessage());
-                System.out.println("Final Battery Level: " + e.getCurrentBatteryLevel() + "%");
+                logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
+                "\n\tFinal Status: " + e.getMessage() +
+                "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
+                );
             }
         } else {
-            System.out.println("ERROR: No initial mode found in program!");
+            logger.info("ERROR: No initial mode found in program! Terminating execution.\n");
         }
-        
-        // Print final drone state
-        System.out.println("\n=== FINAL DRONE STATE ===");
-        System.out.println("Position: " + droneState.getCurrentPosition());
-        System.out.println("Altitude: " + droneState.getCurrentAltitude());
-        System.out.println("Battery Level: " + droneState.getBatteryLevel() + "%");
-        System.out.println("Total Distance Travelled: " + droneState.getTotalDistanceTravelled());
-        System.out.println("========================");
     }
     
     private Mode findModeByName(ArrayList<Mode> modes, String name) {
