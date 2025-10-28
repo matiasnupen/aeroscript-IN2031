@@ -7,7 +7,7 @@ public class LowBatteryEvent extends Event {
 
     @Override
     public boolean isTriggered(DroneState droneState) {
-        return droneState.getBatteryLevel() <= 20;
+        return droneState.batteryIsLow();
     }
 
     @Override

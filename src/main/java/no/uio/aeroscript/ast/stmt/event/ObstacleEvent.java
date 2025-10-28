@@ -8,8 +8,7 @@ public class ObstacleEvent extends Event {
 
     @Override
     public boolean isTriggered(DroneState droneState) {
-        // Implementation for obstacle detection goes here
-        return false; // Placeholder return value
+        return droneState.obstacleDetected();
     }
 
     @Override

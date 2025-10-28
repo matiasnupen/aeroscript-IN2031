@@ -13,8 +13,7 @@ public class MessageEvent extends Event {
 
     @Override
     public boolean isTriggered(DroneState droneState) {
-        // Check message queue for this specific messageId
-        return false; // Placeholder implementation
+        return true; //TODO: implement message event triggering logic
     }
 
     @Override

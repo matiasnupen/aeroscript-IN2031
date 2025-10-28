@@ -1,23 +1,26 @@
 package no.uio.aeroscript;
 
-import java.util.logging.Logger;
-
-import no.uio.aeroscript.antlr.AeroScriptLexer;
-import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.stmt.Mode;
-import no.uio.aeroscript.runtime.Interpreter;
-import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Point;
-import no.uio.aeroscript.ast.stmt.Statement;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
+import java.util.logging.Logger;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+
+import no.uio.aeroscript.antlr.AeroScriptLexer;
+import no.uio.aeroscript.antlr.AeroScriptParser;
+import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.ast.stmt.Statement;
+import no.uio.aeroscript.runtime.Interpreter;
+import no.uio.aeroscript.runtime.REPL;
+import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.type.Point;
 
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
@@ -74,7 +77,25 @@ public class Main {
 
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
-                interpreter.executeProgram(modes);
+                interpreter.executeProgram(modes);        
+                
+                REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getFirstExecution());
+                System.out.println("Welcome to the AeroScript REPL!");
+                while(!repl.isTerminating()) {
+                    System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
+                    LineReader reader = LineReaderBuilder.builder().build();
+                    String next;
+                    String left;
+                    String[] splits;
+                do {
+                    next = reader.readLine("MO> ");
+                    if (next == null) {
+                        break;
+                    }
+                    splits = next.trim().split(" ", 2);
+                    left = splits.length == 1 ? "" : splits[1].trim();
+                } while (!repl.command(splits[0], left));
+        }
 
                 @SuppressWarnings("unchecked")
                 HashMap<String, Object> finalVars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);

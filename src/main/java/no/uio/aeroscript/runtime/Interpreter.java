@@ -3,6 +3,7 @@ package no.uio.aeroscript.runtime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Logger;
 
@@ -45,6 +46,20 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     public Interpreter(HashMap<Memory, Object> heap, Stack<Statement> stack) {
         this.heap = heap;
         this.stack = stack;
+    }
+
+    public void setFirstExecution(Mode firstExecution) {
+        // Implement for Oblig3
+    }
+
+    public Map<String, Runnable> getListeners() {
+        // Implement for Oblig3
+        return null;
+    }
+
+    public Mode getFirstExecution() {
+        // Implement for Oblig3
+        return null;
     }
 
     private Object getVariable(String varName) {
