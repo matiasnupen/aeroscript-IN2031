@@ -44,6 +44,8 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     private Mode firstExecution = null;
     private Map<String, Runnable> listeners = new HashMap<>();
 
+    private ArrayList<Mode> allModes;
+
     public Interpreter(HashMap<Memory, Object> heap, Stack<Statement> stack) {
         this.heap = heap;
         this.stack = stack;
@@ -255,11 +257,28 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             if (statement instanceof Action) {
                 try {
                     executeAction((Action) statement);
+
+                    // After action execution, check for reactions
                     String reactionTarget = mode.checkReactions(DroneState.getInstance());
                     if (reactionTarget != null) {
                         logger.info("Reaction triggered! Transitioning to: " + reactionTarget);
-                        // TODO: Handle transition to a reaction
-                        break;
+                        Mode targetMode = findModeByName(getAllModes(), reactionTarget);
+                        if (targetMode != null) {
+                            executeMode(targetMode);
+
+                            String nextModeName = targetMode.getNextModeName();
+                            while (nextModeName != null) {
+                                Mode nextMode = findModeByName(getAllModes(), nextModeName);
+                                if (nextMode != null) {
+                                    executeMode(nextMode);
+                                    nextModeName = nextMode.getNextModeName();
+                                } else {
+                                    logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
+                                    break;
+                                }
+                            }
+                        } 
+                        return; // Exit current mode execution after reaction
                     }
                 } catch (BatteryDepletedException e) {
                     logger.warning("BATTERY DEPLETION DETECTED" + 
@@ -274,13 +293,18 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         logger.info("MODE COMPLETED: " + mode.getName() + "\n");
     }
 
+    private ArrayList<Mode> getAllModes() {
+        return new ArrayList<>();
+    }
+
     /** Find the initial mode and execute it
      * Initialize DroneState with heap values before execution
-     * @param modes is the list of all modes in the program
+     * @param modes is the list of all modes in the program, and is copied into allModes
      * @param firstExecution is the mode to be executed first 
      * @logger logs the start and end of program execution, as well as battery depletion events
      * @throws BatteryDepletedException if battery depletes during execution */
     public void executeProgram(ArrayList<Mode> modes) {
+        this.allModes = modes; // At the start of program execution
         
         DroneState droneState = DroneState.getInstance();
         droneState.setCurrentPosition((Point) getVariable("initial position"));
@@ -350,7 +374,34 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                     if (event instanceof MessageEvent messageEvent) {
                         listeners.put(messageEvent.getMessageId(), () -> {
                             logger.info("Message listener triggered for message ID: " + messageEvent.getMessageId());
-                            // TODO: Implement mode transition logic from a message
+                            
+                            String targetModeName = reaction.getTargetModeName();
+                            Mode targetMode = findModeByName(modes, targetModeName);
+
+                            if (targetMode != null) {
+                                logger.info("Transitioning to mode: " + targetModeName + " due to message event.");
+                                // TODO: Implement mode transition logic from a message
+                                try {
+                                    executeMode(targetMode);
+
+                                    String nextModeName = targetMode.getNextModeName();
+                                    while(nextModeName != null) {
+                                        Mode nextMode = findModeByName(modes, nextModeName);
+                                        if (nextMode != null) {
+                                            executeMode(nextMode);
+                                            nextModeName = nextMode.getNextModeName();
+                                        } else {
+                                            logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
+                                            break;
+                                        }
+                                    }
+                                } catch (BatteryDepletedException e) {
+                                    logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
+                                    "\n\tFinal Status: " + e.getMessage() +
+                                    "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
+                                    );
+                                }
+                            }
                         });
                     }
                 }

@@ -17,6 +17,7 @@ import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.ast.stmt.Statement;
+import no.uio.aeroscript.runtime.BatteryDepletedException;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.runtime.REPL;
 import no.uio.aeroscript.type.Memory;
@@ -77,10 +78,49 @@ public class Main {
 
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
-                interpreter.executeProgram(modes);        
                 
                 REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getFirstExecution());
-                System.out.println("Welcome to the AeroScript REPL!");
+                
+                Thread programThread = new Thread(() -> {
+                    try {
+                        interpreter.executeProgram(modes);
+                    } catch (BatteryDepletedException e) {
+                        logger.info("Program terminated: " + e.getMessage());
+                        repl.terminate();
+                    }
+                });
+
+                Thread replThread = new Thread(() -> {
+                    System.out.println("Welcome to the AeroScript REPL!");
+                    while(!repl.isTerminating()) {
+                        try {
+                            System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
+                            LineReader reader = LineReaderBuilder.builder().build();
+                            String next = reader.readLine("MO> ");
+                            if (next == null) break;
+
+                            String[] splits = next.trim().split(" ", 2);
+                            String left = splits.length == 1 ? "" : splits[1].trim();
+
+                            if (repl.command(splits[0], left)) {
+                                // TODO: command executed successfully
+                            }
+                        } catch (Exception e) {
+                            logger.severe("REPL error: " + e.getMessage());
+                        }
+                    }
+                });
+
+                programThread.start();
+                replThread.start();
+
+                try {
+                    programThread.join();
+                    replThread.join();
+                } catch (InterruptedException e) {
+                    logger.severe("Thread interrupted: " + e.getMessage());
+                }
+                
                 while(!repl.isTerminating()) {
                     System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
                     LineReader reader = LineReaderBuilder.builder().build();
