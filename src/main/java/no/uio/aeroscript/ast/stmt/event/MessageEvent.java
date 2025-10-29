@@ -13,7 +13,11 @@ public class MessageEvent extends Event {
 
     @Override
     public boolean isTriggered(DroneState droneState) {
-        return true; //TODO: implement message event triggering logic
+        return false;
+    }    
+    
+    public String getMessageId() {
+        return messageId;
     }
 
     @Override

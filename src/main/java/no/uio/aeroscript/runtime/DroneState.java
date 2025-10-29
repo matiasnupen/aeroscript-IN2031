@@ -69,7 +69,8 @@ public class DroneState {
      * @param removeObstacle(Obstacle obstacle) removes an obstacle from the detected obstacles list
      * @param hasObstacleOnPoint(Point point) checks if there is an obstacle at the given point
      * @param hasObstacleOnMoveByDistance(Point start, Point end) checks if there is an obstacle along the path from start point to end point
-     */
+     * @param obstacleDetected() checks if any obstacles are currently detected
+    **/
     public void discoverObstacle(Obstacle obstacle) {
         obstacle.discover();
         detectedObstacles.add(obstacle);
@@ -91,7 +92,7 @@ public class DroneState {
     public boolean hasObstacleOnMoveByDistance(Point start, Point end) {
         // Moving along the x-axis as standard for this program
         Float yRow = start.getY();
-        for (Float x = start.getX(); x <= end.getX(); x += 0.1f) { // TODO: adjust step size as needed
+        for (Float x = start.getX(); x <= end.getX(); x += 0.1f) { // TODO: maybe change the stepsize
             Point checkPoint = new Point(x, yRow);
             if (hasObstacleOnPoint(checkPoint)) {
                 logger.info("OBSTACLE FOUND between points: " + start.toString() + " and " + end.toString());
@@ -102,6 +103,10 @@ public class DroneState {
     }
     public boolean obstacleDetected() {
         return !detectedObstacles.isEmpty();
+    }
+
+    public boolean batteryIsLow() {
+        return getBatteryLevel() <= 20.0f;
     }
 
     @Override

@@ -34,8 +34,6 @@ import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 import no.uio.aeroscript.type.Range;
 
-/* For now, let us just ignore interrupts, will need to build
- * an interrupt lookup table and introduce a message queue later... */
 public class Interpreter extends AeroScriptBaseVisitor<Object> {
     private static final Logger logger = Logger.getLogger(Interpreter.class.getName());
 
@@ -43,24 +41,17 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     private Stack<Statement> stack;
     private HashMap<String, ArrayList<Statement>> methodTable = new HashMap<>();
 
+    private Mode firstExecution = null;
+    private Map<String, Runnable> listeners = new HashMap<>();
+
     public Interpreter(HashMap<Memory, Object> heap, Stack<Statement> stack) {
         this.heap = heap;
         this.stack = stack;
     }
 
-    public void setFirstExecution(Mode firstExecution) {
-        // Implement for Oblig3
-    }
-
-    public Map<String, Runnable> getListeners() {
-        // Implement for Oblig3
-        return null;
-    }
-
-    public Mode getFirstExecution() {
-        // Implement for Oblig3
-        return null;
-    }
+    public void setFirstExecution(Mode firstExecution) { this.firstExecution = firstExecution; }
+    public Mode getFirstExecution() { return firstExecution; }
+    public Map<String, Runnable> getListeners() { return listeners; }
 
     private Object getVariable(String varName) {
         HashMap<String, Object> vars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
@@ -72,6 +63,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         vars.put(varName, value);
     }
 
+    /** visitPoint
+     * @param ctx is the point context
+     * @return Point object created from the context */
     @Override
     public Object visitPoint(AeroScriptParser.PointContext ctx) {
         Expression xNode = (Expression) visit(ctx.expression(0));
@@ -81,6 +75,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Point(x, y);
     }
 
+    /** visitRange
+     * @param ctx is the range context
+     * @return Range object created from the context */
     @Override
     public Object visitRange(AeroScriptParser.RangeContext ctx) {
         Expression startNode = (Expression) visit(ctx.expression(0));
@@ -90,20 +87,29 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Range(start, end);
     }
 
-        /** Actions 
-         * The visitAc...-methods create the appropriate Action objects
-         * and set the drone state and any relevant parameters.
+
+        /** visitActions in general
+         * visitAc-methods create the appropriate Action objects, and updates the DroneState singleton
+         * @param ctx is the action context
+         * @return Action object created from the context
          * 
          * The duration and speed expressions are set to null for now
          * as these will be set later if they are present in the action
-        */
+        **/
 
+    /** Dock Action Visitor
+     * @param ctx is the dock action context
+     * @return Action object created from the context */
     @Override
     public Action visitAcDock(AeroScriptParser.AcDockContext ctx) {
         DroneState droneState = DroneState.getInstance();
         return new DockAction(droneState, null, null);
     }
 
+    /** Ascend Action Visitor
+     * @param ctx is the ascend action context
+     * @handles only ASCEND BY NUMBER for now
+     * @return Action object created from the context */
     @Override
     public Action visitAcAscend(AeroScriptParser.AcAscendContext ctx) {
         DroneState droneState = DroneState.getInstance();
@@ -113,6 +119,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new AltitudeAction.Ascend(droneState, numberAscendingExpression, null, null);
     }
 
+    /** Descend Action Visitor
+     * @param ctx is the descend action context
+     * @handles both DESCEND BY NUMBER and DESCEND TO GROUND with the correct classes
+     * @return Action object created from the context */
     @Override
     public Action visitAcDescend(AeroScriptParser.AcDescendContext ctx) {
         DroneState droneState = DroneState.getInstance();
@@ -127,6 +137,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
 
+    /** Move Action Visitor
+     * @param ctx is the move action context
+     * @handles both MOVE TO POINT and MOVE BY NUMBER with the correct classes
+     * @return Action object created from the context */
     @Override
     public Action visitAcMove(AeroScriptParser.AcMoveContext ctx) {
         DroneState droneState = DroneState.getInstance();
@@ -144,6 +158,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
 
+    /** Turn Action Visitor
+     * @param ctx is the turn action context
+     * @handles both LEFT and RIGHT turns with the correct classes
+     * @return Action object created from the context */
     @Override
     public Action visitAcTurn(AeroScriptParser.AcTurnContext ctx) {
         DroneState droneState = DroneState.getInstance();
@@ -158,11 +176,15 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         } 
     }
 
+    /** Action Visitor
+     * @param ctx is the action context
+     * @handles optional duration and speed modifiers
+     * @return Action object created from the context */
     @Override
     public Action visitAction(AeroScriptParser.ActionContext ctx) {
-        // Get the base action
-        Action action = null;
+        Action action = null; // Get the base action
         
+        // Determine which action type it is
         if (ctx.acDock() != null) {
             action = visitAcDock(ctx.acDock());
         } else if (ctx.acMove() != null) {
@@ -196,12 +218,13 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return action;
     }
 
+    /** Action Execution
+     * @param action is the action to be executed
+     * @throws BatteryDepletedException if battery depletes during action execution
+     * @logger logs battery depletion events and updates heap variables after action execution */
     private void executeAction(Action action) {
-        // Execute the action (this will update the DroneState singleton)
-        action.execute();
-        
-        // Get the updated state from DroneState singleton
-        DroneState droneState = DroneState.getInstance();
+        action.execute(); // Updates the DroneState singleton
+        DroneState droneState = DroneState.getInstance(); // Get the updated state from DroneState singleton
 
         // Update heap with new values
         setVariable("current position", droneState.getCurrentPosition());
@@ -214,6 +237,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         setVariable("battery low", droneState.getBatteryLevel() <= 20.0f);
     }
     
+    /** Mode Execution
+     * @param mode is the mode to be executed
+     * @throws BatteryDepletedException if battery depletes during execution
+     * @logger logs the entering and completion of modes, as well as battery depletion events */
     public void executeMode(Mode mode) throws BatteryDepletedException {
         logger.info("ENTERING MODE: " + mode.getName() + "\n");
         DroneState droneState = DroneState.getInstance();
@@ -241,9 +268,14 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
         logger.info("MODE COMPLETED: " + mode.getName() + "\n");
     }
-    
+
+    /** Find the initial mode and execute it
+     * Initialize DroneState with heap values before execution
+     * @param modes is the list of all modes in the program
+     * @param firstExecution is the mode to be executed first 
+     * @logger logs the start and end of program execution, as well as battery depletion events
+     * @throws BatteryDepletedException if battery depletes during execution */
     public void executeProgram(ArrayList<Mode> modes) {
-        // Initialize DroneState with heap values before execution
         DroneState droneState = DroneState.getInstance();
         droneState.setCurrentPosition((Point) getVariable("initial position"));
         droneState.setBatteryLevel((Float) getVariable("initial battery level"));
@@ -255,14 +287,16 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         "\n\tInitial Position: " + droneState.getCurrentPosition() + "\n"
         );
 
-        // Find the initial mode and execute it
         Mode initialMode = null;
         for (Mode mode : modes) {
             if (mode.isInitial()) {
                 initialMode = mode;
+                firstExecution = mode; 
                 break;
             }
         }
+
+        buildListeners(modes);
         
         if (initialMode != null) {
             try {
@@ -275,7 +309,6 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                     if (droneState.getBatteryLevel() <= 0.0f) {
                         throw new BatteryDepletedException(droneState.getBatteryLevel(), "ModeTransition");
                     }
-                    
                     Mode nextMode = findModeByName(modes, nextModeName);
                     if (nextMode != null) {
                         executeMode(nextMode);
@@ -285,7 +318,6 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                         break;
                     }
                 }
-
                 logger.info("PROGRAM COMPLETED SUCCESSFULLY\n");
 
             } catch (BatteryDepletedException e) {
@@ -298,7 +330,30 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             logger.info("ERROR: No initial mode found in program! Terminating execution.\n");
         }
     }
-    
+
+    /** The method builds listeners for message events
+     * @param modes is the list of all modes in the program
+     * @param messageEvent is the message event to listen for
+     * @logger logs when a listener is triggered */
+    private void buildListeners(ArrayList<Mode> modes) {
+        for (Mode mode : modes) {
+            for (Statement statement : mode.getStatements()) {
+                if (statement instanceof Reaction reaction) {
+                    Event event = reaction.getEvent();
+                    if (event instanceof MessageEvent messageEvent) {
+                        listeners.put(messageEvent.getMessageId(), () -> {
+                            logger.info("Message listener triggered for message ID: " + messageEvent.getMessageId());
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /** Finds a mode by its name
+     * @param modes is the list of all modes kept in the program
+     * @param name is the name of the mode to find
+     * @return the Mode object if found, null otherwise */
     private Mode findModeByName(ArrayList<Mode> modes, String name) {
         for (Mode mode : modes) {
             if (mode.getName().equals(name)) {
@@ -308,9 +363,19 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return null;
     }
 
+    /** Statements 
+     * @param ctx is the statement context
+     * @if the statement is an action, visit the action context
+     * @if the statement is a reaction, visit the reaction context
+     * @return null if neither action nor reaction is found */
     @Override
     public Statement visitStatement(AeroScriptParser.StatementContext ctx) {
-        return (Statement) visitAction(ctx.action());
+        if (ctx.action() != null) {
+            return (Statement) visitAction(ctx.action());
+        } else if (ctx.reaction() != null) {
+            return (Statement) visitReaction(ctx.reaction());
+        }
+        return null;
     }
 
     @Override
@@ -334,7 +399,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Mode(name, isInitial, statements, nextModeName);
     }
 
-    /* Program = list of executions */
+    /** Program = list of executions 
+     * @param ctx is the program context
+     * @return list of modes in the program */
     @Override
     public ArrayList<Mode> visitProgram(AeroScriptParser.ProgramContext ctx) {
         ArrayList<Mode> modes = new ArrayList<>();
@@ -345,7 +412,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return modes;
     }
 
-    /* Reaction & Events */
+    /** Reaction & Events 
+     * @param ctx is the reaction context
+     * @return Reaction object created from the context */
     @Override
     public Reaction visitReaction(AeroScriptParser.ReactionContext ctx) {
         Event event = (Event) visitEvent(ctx.event());
@@ -353,6 +422,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         return new Reaction(event, targetModeName);
     }
 
+    /** Event
+     * @param ctx is the event context
+     * @return Event object created from the context */
     @Override
     public Event visitEvent(AeroScriptParser.EventContext ctx) {
         if (ctx.OBSTACLE() != null) {
@@ -366,7 +438,12 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         throw new IllegalArgumentException("Unknown event type");
     }
 
-    /* Expressions */
+        /** Expressions in general
+         * @param ctx is the expression context
+         * @switch on the type of expression context, and call the appropriate visit method
+         * @return Expression object created from the context 
+        **/
+    
     public Expression visitExpression(AeroScriptParser.ExpressionContext ctx) {
         return switch (ctx) {
             case AeroScriptParser.PlusExpContext pex -> visitPlusExp(pex);

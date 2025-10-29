@@ -29,4 +29,8 @@ public class Reaction extends Statement {
     public String toString() {
         return "on " + event.getEventType() + " -> " + targetModeName + ";";
     }
+
+    public Event getEvent() {
+        return event;
+    }
 }
