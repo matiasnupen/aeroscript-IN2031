@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.Obstacle;
 
 public class DroneState {
 
@@ -18,11 +19,7 @@ public class DroneState {
     private boolean isFlying;
     private Float totalDistanceTravelled;
     
-    // Obstacle detection state
-    private boolean obstacleDetected;
-    private String obstacleType;
-    private Point obstacleLocation;
-    private List<Point> detectedObstacles;
+    private List<Obstacle> detectedObstacles;
 
     private static DroneState instance = null;
 
@@ -36,9 +33,6 @@ public class DroneState {
         this.totalDistanceTravelled = 0.0f;
         
         // Initialize obstacle detection state
-        this.obstacleDetected = false;
-        this.obstacleType = null;
-        this.obstacleLocation = null;
         this.detectedObstacles = new ArrayList<>();
     }
 
@@ -48,12 +42,7 @@ public class DroneState {
     public Float getCurrentPointingDirection() { return currentPointingDirection; }
     public boolean isFlying() { return isFlying;}
     public Float getTotalDistanceTravelled() { return totalDistanceTravelled;}
-    
-    // Obstacle detection getters
-    public boolean isObstacleDetected() { return obstacleDetected; }
-    public String getObstacleType() { return obstacleType; }
-    public Point getObstacleLocation() { return obstacleLocation; }
-    public List<Point> getDetectedObstacles() { return detectedObstacles; }
+    public List<Obstacle> getDetectedObstacles() { return detectedObstacles; }
 
     public static DroneState getInstance() {
         if (instance == null) {
@@ -74,54 +63,46 @@ public class DroneState {
         isFlying = false;
     }
 
-    /** Methods for usage in Event-handling
-     * @return true if battery level is 20% or lower
-     * @return the entire message queue as a String
-     * 
-     */
-    public boolean batteryIsLow() {
-        return batteryLevel <= 20.0f;
-    }
-
-    public String getMessageQueue() {
-        // TODO: Implement message queue system
-        return "";
-    }
-
-    public boolean obstacleDetected() { 
-        return obstacleDetected; 
-    }
-    
     /**
-     * Reports an obstacle detected by sensors or external systems
-     * @param obstacleType Type of obstacle (e.g., "building", "aircraft", "terrain")
-     * @param location Location where obstacle was detected (can be null)
+     * Methods to manage obstacles
+     * @param discoverObstacle(Obstacle obstacle) updates the status of an obstacle and adds it to the detected obstacles list
+     * @param removeObstacle(Obstacle obstacle) removes an obstacle from the detected obstacles list
+     * @param hasObstacleOnPoint(Point point) checks if there is an obstacle at the given point
+     * @param hasObstacleOnMoveByDistance(Point start, Point end) checks if there is an obstacle along the path from start point to end point
      */
-    public void reportObstacle(String obstacleType, Point location) {
-        this.obstacleDetected = true;
-        this.obstacleType = obstacleType;
-        this.obstacleLocation = location;
-        logger.info("OBSTACLE DETECTED: " + obstacleType + 
-            (location != null ? " at " + location : ""));
+    public void discoverObstacle(Obstacle obstacle) {
+        obstacle.discover();
+        detectedObstacles.add(obstacle);
+        logger.info("OBSTACLE DETECTED: " + obstacle.getObstacleName() + " at " + obstacle.getLocation());
     }
-    
-    /**
-     * Reports an obstacle without specific location
-     */
-    public void reportObstacle(String obstacleType) {
-        reportObstacle(obstacleType, null);
+    public void removeObstacle(Obstacle obstacle) {
+        detectedObstacles.remove(obstacle);
+        logger.info("OBSTACLE REMOVED: " + obstacle.getObstacleName() + " at " + obstacle.getLocation());
     }
-    
-    /**
-     * Clears the obstacle detection state
-     */
-    public void clearObstacle() {
-        this.obstacleDetected = false;
-        this.obstacleType = null;
-        this.obstacleLocation = null;
-        logger.info("OBSTACLE REMOVED - continuing normal flight");
+    public boolean hasObstacleOnPoint(Point point) {
+        for (Obstacle obstacle : detectedObstacles) {
+            if (obstacle.getLocation().equals(point)) {
+                logger.info("OBSTACLE FOUND at point: " + point.toString());
+                return true;
+            }
+        }
+        return false;
     }
-
+    public boolean hasObstacleOnMoveByDistance(Point start, Point end) {
+        // Moving along the x-axis as standard for this program
+        Float yRow = start.getY();
+        for (Float x = start.getX(); x <= end.getX(); x += 0.1f) { // TODO: adjust step size as needed
+            Point checkPoint = new Point(x, yRow);
+            if (hasObstacleOnPoint(checkPoint)) {
+                logger.info("OBSTACLE FOUND between points: " + start.toString() + " and " + end.toString());
+                return true;
+            }
+        }
+        return false;
+    }
+    public boolean obstacleDetected() {
+        return !detectedObstacles.isEmpty();
+    }
 
     @Override
     public String toString() {
@@ -135,5 +116,4 @@ public class DroneState {
                 ", totalDistanceTravelled=" + totalDistanceTravelled.toString() +
                 '}';
     }
-
 }

@@ -5,7 +5,6 @@ import no.uio.aeroscript.runtime.DroneState;
 
 public class ObstacleEvent extends Event {
     
-
     @Override
     public boolean isTriggered(DroneState droneState) {
         return droneState.obstacleDetected();
