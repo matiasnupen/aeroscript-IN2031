@@ -23,6 +23,7 @@ public class Reaction extends Statement {
     @Override
     public void execute() {
         // TODO: Reactions don't execute directly, they trigger mode transitions.
+        // TODO: Maybe remove, if i dont need it later.
     }
 
     @Override

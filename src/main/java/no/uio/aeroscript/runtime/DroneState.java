@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import no.uio.aeroscript.type.Point;
 import no.uio.aeroscript.type.Obstacle;
+import no.uio.aeroscript.type.Point;
 
 public class DroneState {
 
@@ -21,6 +21,8 @@ public class DroneState {
     
     private List<Obstacle> detectedObstacles;
 
+    private List<String> messageIds;
+
     private static DroneState instance = null;
 
     public DroneState() {
@@ -32,8 +34,9 @@ public class DroneState {
         this.isFlying = false;
         this.totalDistanceTravelled = 0.0f;
         
-        // Initialize obstacle detection state
+        // Initialize obstacle detection and messages
         this.detectedObstacles = new ArrayList<>();
+        this.messageIds = new ArrayList<>();
     }
 
     public Point getCurrentPosition() { return currentPosition; }
@@ -105,6 +108,30 @@ public class DroneState {
         return !detectedObstacles.isEmpty();
     }
 
+    /** Methods to handle received messages
+     * @param addReceivedMessage(String messageId) adds a message ID to the list of received messages
+     * @param removeMessageId(String messageId) removes a message ID from the list of received messages
+     * @param messageReceived(String messageId) is used in the MessageEvent-class *
+    **/
+    public void addReceivedMessage(String messageId) {
+        if (!messageIds.contains(messageId)) {
+            messageIds.add(messageId);
+        }
+    }
+    public String removeMessageId(String messageId) {
+        if (messageIds.contains(messageId)) {
+            messageIds.remove(messageId);
+            return messageId;
+        }
+        return null;
+    }
+    public boolean messageReceived(String messageId) {
+        return messageIds.contains(messageId);
+    }
+
+    /** Checks if the battery level is low
+     * Used in LowBatteryEvent-class
+    **/
     public boolean batteryIsLow() {
         return getBatteryLevel() <= 20.0f;
     }
