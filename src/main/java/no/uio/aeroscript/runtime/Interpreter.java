@@ -255,6 +255,12 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
             if (statement instanceof Action) {
                 try {
                     executeAction((Action) statement);
+                    String reactionTarget = mode.checkReactions(DroneState.getInstance());
+                    if (reactionTarget != null) {
+                        logger.info("Reaction triggered! Transitioning to: " + reactionTarget);
+                        // TODO: Handle transition to a reaction
+                        break;
+                    }
                 } catch (BatteryDepletedException e) {
                     logger.warning("BATTERY DEPLETION DETECTED" + 
                     "\n\tMode: " + mode.getName() + 
@@ -265,7 +271,6 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                 }
             }
         }
-
         logger.info("MODE COMPLETED: " + mode.getName() + "\n");
     }
 
@@ -276,6 +281,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
      * @logger logs the start and end of program execution, as well as battery depletion events
      * @throws BatteryDepletedException if battery depletes during execution */
     public void executeProgram(ArrayList<Mode> modes) {
+        
         DroneState droneState = DroneState.getInstance();
         droneState.setCurrentPosition((Point) getVariable("initial position"));
         droneState.setBatteryLevel((Float) getVariable("initial battery level"));
@@ -331,6 +337,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
 
+
     /** The method builds listeners for message events
      * @param modes is the list of all modes in the program
      * @param messageEvent is the message event to listen for
@@ -343,6 +350,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                     if (event instanceof MessageEvent messageEvent) {
                         listeners.put(messageEvent.getMessageId(), () -> {
                             logger.info("Message listener triggered for message ID: " + messageEvent.getMessageId());
+                            // TODO: Implement mode transition logic from a message
                         });
                     }
                 }

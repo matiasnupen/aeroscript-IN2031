@@ -78,6 +78,7 @@ public class DroneState {
         obstacle.discover();
         detectedObstacles.add(obstacle);
         logger.info("OBSTACLE DETECTED: " + obstacle.getObstacleName() + " at " + obstacle.getLocation());
+        logger.info("ALL DETECTED OBSTACLES: " + detectedObstacles.toString());
     }
     public void removeObstacle(Obstacle obstacle) {
         detectedObstacles.remove(obstacle);

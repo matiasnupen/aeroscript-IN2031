@@ -1,0 +1,197 @@
+// Comprehensive Event and Reaction Test for AeroScript
+// This test demonstrates all event types: messages, obstacles, and low battery
+// It also tests mode transitions and REPL interaction
+
+-> MissionStart {
+    // Wait for mission start command via REPL
+    on message [begin_mission] -> PreFlightCheck
+    on message [emergency_abort] -> EmergencyShutdown
+}
+
+PreFlightCheck {
+    // Basic pre-flight movements
+    ascend by 5 for 2 seconds
+    turn right by 90
+    turn left by 90
+    descend by 5
+    
+    // Ready for main mission
+    on message [start_patrol] -> PatrolMode
+    on message [start_delivery] -> DeliveryMode
+    on low_battery -> LowBatteryLanding
+    on obstacle -> ObstacleAvoidance
+} -> WaitingMode
+
+WaitingMode {
+    // Hovering and waiting for commands
+    ascend by 2
+    descend by 2
+    
+    // Multiple message reactions
+    on message [patrol] -> PatrolMode
+    on message [deliver] -> DeliveryMode
+    on message [return_home] -> ReturnToBase
+    on message [test_obstacle] -> ObstacleTest
+    on low_battery -> LowBatteryLanding
+    on obstacle -> ObstacleAvoidance
+}
+
+PatrolMode {
+    // Patrol flight pattern
+    move to point(20, 20) at speed 8
+    turn right by 45
+    move to point(40, 20) at speed 8
+    turn right by 45
+    move to point(40, 40) at speed 8
+    turn right by 45
+    move to point(20, 40) at speed 8
+    turn right by 45
+    
+    // Patrol reactions
+    on message [extend_patrol] -> ExtendedPatrol
+    on message [abort_patrol] -> ReturnToBase
+    on obstacle -> ObstacleAvoidance
+    on low_battery -> LowBatteryLanding
+} -> PatrolComplete
+
+PatrolComplete {
+    // Patrol completed, await new orders
+    ascend by 10
+    move to point(0, 0)
+    
+    on message [new_mission] -> WaitingMode
+    on message [land] -> NormalLanding
+    on low_battery -> LowBatteryLanding
+    on obstacle -> ObstacleAvoidance
+} -> ReturnToBase
+
+DeliveryMode {
+    // Delivery flight sequence
+    ascend by 30 for 3 seconds
+    move to point(100, 100) at speed 15
+    descend by 20 for 2 seconds
+    ascend by 20
+    move to point(50, 150) at speed 12
+    
+    // Delivery reactions
+    on message [package_delivered] -> ReturnToBase
+    on message [change_destination] -> DeliveryMode
+    on obstacle -> ObstacleAvoidance
+    on low_battery -> EmergencyLanding
+} -> DeliveryComplete
+
+DeliveryComplete {
+    move to point(0, 0) at speed 10
+    descend by 10
+    
+    on message [new_delivery] -> DeliveryMode
+    on low_battery -> LowBatteryLanding
+    on obstacle -> ObstacleAvoidance
+} -> ReturnToBase
+
+ExtendedPatrol {
+    // Extended patrol area
+    move to point(60, 60) at speed 12
+    move to point(80, 80) at speed 12
+    turn left by 180
+    move to point(60, 60) at speed 12
+    move to point(40, 40) at speed 12
+    
+    on message [end_extended] -> PatrolComplete
+    on obstacle -> ObstacleAvoidance
+    on low_battery -> LowBatteryLanding
+} -> PatrolComplete
+
+ObstacleTest {
+    // Mode specifically for testing obstacle detection
+    move to point(10, 10) at speed 5
+    move to point(20, 20) at speed 5
+    move to point(30, 30) at speed 5
+    
+    // Should trigger obstacle reaction during movement
+    on obstacle -> ObstacleAvoidance
+    on message [obstacle_test_complete] -> WaitingMode
+    on low_battery -> LowBatteryLanding
+} -> WaitingMode
+
+ObstacleAvoidance {
+    // Obstacle avoidance maneuvers
+    ascend by 15 for 2 seconds
+    turn right by 90
+    move by 20 at speed 6
+    turn left by 90
+    move by 30 at speed 6
+    turn left by 90
+    move by 20 at speed 6
+    turn right by 90
+    descend by 10
+    
+    // After avoidance, check for more obstacles or continue
+    on message [resume_mission] -> WaitingMode
+    on message [continue_patrol] -> PatrolMode
+    on obstacle -> ObstacleAvoidance
+    on low_battery -> LowBatteryLanding
+} -> WaitingMode
+
+LowBatteryLanding {
+    // Safe landing procedure for low battery
+    ascend by 5
+    move to point(0, 0) at speed 20
+    descend to ground for 5 seconds
+    
+    // Even during emergency landing, handle critical messages
+    on message [emergency_power] -> EmergencyMode
+    on obstacle -> EmergencyObstacleAvoidance
+}
+
+EmergencyObstacleAvoidance {
+    // Critical obstacle avoidance during low battery
+    ascend by 10
+    turn right by 180
+    move by 15 at speed 10
+    descend to ground
+    
+    on message [battery_replaced] -> WaitingMode
+}
+
+EmergencyMode {
+    // Emergency power mode - minimal operations
+    ascend by 10
+    move to point(0, 0) at speed 25
+    return to base
+    
+    on obstacle -> EmergencyObstacleAvoidance
+}
+
+NormalLanding {
+    // Normal controlled landing
+    move to point(0, 0) at speed 10
+    descend by 20 for 3 seconds
+    descend to ground
+    
+    on message [takeoff_again] -> WaitingMode
+    on obstacle -> ObstacleAvoidance
+}
+
+ReturnToBase {
+    // Return to base sequence
+    ascend by 20
+    move to point(0, 0) at speed 15
+    return to base
+    
+    // Final safety checks
+    on obstacle -> ObstacleAvoidance
+    on low_battery -> EmergencyLanding
+}
+
+EmergencyLanding {
+    // Emergency landing - immediate descent
+    descend to ground
+    
+    on message [emergency_resolved] -> WaitingMode
+}
+
+EmergencyShutdown {
+    // Complete emergency shutdown
+    descend to ground for 1 seconds
+}

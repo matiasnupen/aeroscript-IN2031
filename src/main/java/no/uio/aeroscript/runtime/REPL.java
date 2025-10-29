@@ -2,6 +2,7 @@ package no.uio.aeroscript.runtime;
 
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.runtime.DroneState;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -117,7 +118,11 @@ public class REPL {
         commands.put("message", new Command("message", this, (param) -> {
             Runnable listener = listeners.get(param);
             if (listener != null) {
+                // Add message to DroneState for MessageEvent detection
+                DroneState.getInstance().addReceivedMessage(param);
                 this.initialMode.receiveMessage(param);
+                listener.run(); // Execute the listener
+                printRepl("Message sent: " + param);
             } else {
                 printRepl("No listener for message: " + param);
             }
