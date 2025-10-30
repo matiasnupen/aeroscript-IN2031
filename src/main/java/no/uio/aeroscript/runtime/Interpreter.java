@@ -284,35 +284,23 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
         // Handle modes with only reactions (no actions) - wait for events
         if (!hasActions && hasReactions) {
-            logger.info("Mode '" + mode.getName() + "' has only reactions. Waiting for events...\n");
+            logger.info("Mode '" + mode.getName() + "' has only reactions. Use REPL to send messages or trigger events.\n");
 
-            while (!modeTransitionRequested) {
-                try {
-                    Thread.sleep(100); // Wait for message events
-
-                    // Check for other event-based reactions (obstacle, low_battery, etc.)
-                    String targetModeName = mode.checkReactions(droneState);
-                    if (targetModeName != null) {
-                        Mode targetMode = findModeByName(getAllModes(), targetModeName);
-                        if (targetMode != null) {
-                            logger.info("Transitioning to mode: " + targetModeName + " due to event reaction");
-                            executeMode(targetMode);
-                            return;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.info("Mode execution interrupted while waiting for events.\n");
+            // For reactive-only modes, we don't block - we just set up and return
+            // The REPL will handle triggering transitions via messages
+            
+            // Check for immediate non-message reactions (obstacle, low_battery, etc.)
+            String targetModeName = mode.checkReactions(droneState);
+            if (targetModeName != null) {
+                Mode targetMode = findModeByName(getAllModes(), targetModeName);
+                if (targetMode != null) {
+                    logger.info("Transitioning to mode: " + targetModeName + " due to event reaction");
+                    executeMode(targetMode);
                     return;
                 }
             }
-
-            // If we reach here, a mode transition was requested via message
-            if (pendingModeTransition != null) {
-                modeTransitionRequested = false;
-                executeMode(pendingModeTransition);
-                pendingModeTransition = null;
-            }
+            
+            // For reactive modes, we don't block - the REPL handles interaction
             return;
         }
 
@@ -350,13 +338,11 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
 
-    /** Find the initial mode and execute it
-     * Initialize DroneState with heap values before execution
+    /** Initialize the program for REPL execution
+     * Initialize DroneState with heap values and set up listeners
      * @param modes is the list of all modes in the program, and is copied into allModes
-     * @param firstExecution is the mode to be executed first 
-     * @logger logs the start and end of program execution, as well as battery depletion events
-     * @throws BatteryDepletedException if battery depletes during execution */
-    public void executeProgram(ArrayList<Mode> modes) {
+     * This method sets up the program but doesn't execute it - execution happens via REPL messages */
+    public void initializeProgram(ArrayList<Mode> modes) {
         this.allModes = modes; // At the start of program execution copy modes to allModes
         
         DroneState droneState = DroneState.getInstance();
@@ -365,7 +351,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         droneState.setCurrentAltitude((Float) getVariable("altitude"));
         droneState.setTotalDistanceTravelled((Float) getVariable("distance travelled"));
         
-        logger.info("AEROSCRIPT PROGRAM EXECUTION STARTED" + 
+        logger.info("AEROSCRIPT PROGRAM INITIALIZED" + 
         "\n\tInitial Battery Level: " + droneState.getBatteryLevel() + "%" + 
         "\n\tInitial Position: " + droneState.getCurrentPosition() + "\n"
         );
@@ -382,35 +368,36 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         buildListeners(modes);
         
         if (initialMode != null) {
-            try {
-                executeMode(initialMode);
-                
-
-                String nextModeName = initialMode.getNextModeName();
-                while (nextModeName != null) {
-                    // Check battery before mode transition
-                    if (droneState.getBatteryLevel() <= 0.0f) {
-                        throw new BatteryDepletedException(droneState.getBatteryLevel(), "ModeTransition");
-                    }
-                    Mode nextMode = findModeByName(modes, nextModeName);
-                    if (nextMode != null) {
-                        executeMode(nextMode);
-                        nextModeName = nextMode.getNextModeName();
-                    } else {
-                        logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
-                        break;
-                    }
+            setCurrentMode(initialMode);
+            logger.info("ENTERING MODE: " + initialMode.getName() + "\n");
+            
+            // Check if initial mode has only reactions
+            boolean hasActions = false;
+            boolean hasReactions = false;
+            for (Statement statement : initialMode.getStatements()) {
+                if (statement instanceof Action) {
+                    hasActions = true;
+                } else if (statement instanceof Reaction) {
+                    hasReactions = true;
                 }
-                logger.info("PROGRAM COMPLETED SUCCESSFULLY\n");
-
-            } catch (BatteryDepletedException e) {
-                logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
-                "\n\tFinal Status: " + e.getMessage() +
-                "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
-                );
+            }
+            
+            if (!hasActions && hasReactions) {
+                logger.info("Mode '" + initialMode.getName() + "' has only reactions. Waiting for events...\n");
+                logger.info("Use REPL commands to interact with the program. Type 'help' for available commands.\n");
+            } else {
+                // If initial mode has actions, execute them immediately
+                try {
+                    executeMode(initialMode);
+                } catch (BatteryDepletedException e) {
+                    logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
+                    "\n\tFinal Status: " + e.getMessage() +
+                    "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
+                    );
+                }
             }
         } else {
-            logger.info("ERROR: No initial mode found in program! Terminating execution.\n");
+            logger.info("ERROR: No initial mode found in program! Program not initialized.\n");
         }
     }
 
@@ -444,9 +431,15 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         }
     }
     public void requestModeTransition(Mode targetMode) {
-        this.pendingModeTransition = targetMode;
-        this.modeTransitionRequested = true;
         logger.info("Mode transition requested to: " + targetMode.getName());
+        try {
+            executeMode(targetMode);
+        } catch (BatteryDepletedException e) {
+            logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
+            "\n\tFinal Status: " + e.getMessage() +
+            "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
+            );
+        }
     }
 
     /** Finds a mode by its name

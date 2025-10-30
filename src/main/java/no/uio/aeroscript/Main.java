@@ -27,7 +27,6 @@ import no.uio.aeroscript.type.Point;
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     public static void main(String[] args) {
-        System.setProperty("org.jline.terminal.dumb", "true");
         HashMap<Memory, Object> heap = new HashMap<>();
         Stack<Statement> stack = new Stack<>();
         float batteryLevel;
@@ -80,35 +79,51 @@ public class Main {
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
                 
-                REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getFirstExecution());
+                // Initialize the program (don't execute blocking modes)
+                interpreter.initializeProgram(modes);
                 
-                // Start program execution in background thread
-                Thread programThread = new Thread(() -> {
-                    try {
-                        interpreter.executeProgram(modes);
-                        logger.info("Program execution completed - REPL remains active for further commands");
-                    } catch (BatteryDepletedException e) {
-                        logger.info("Program terminated: " + e.getMessage() + " - REPL remains active");
-                    }
-                    // DON'T terminate REPL - keep it running for continuous interaction
-                });
-
-                // Start the program thread
-                programThread.start();
+                REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getCurrentMode());
 
                 // Run REPL in main thread for better interaction
                 System.out.println("Welcome to the AeroScript REPL!");
                 System.out.println("Type 'help' for available commands or 'exit' to quit");
                 
+                // Create the terminal and reader once, outside the loop
+                LineReader reader = null;
+                try {
+                    reader = LineReaderBuilder.builder()
+                            .terminal(TerminalBuilder.builder()
+                                    .system(true)
+                                    .build())
+                            .build();
+                } catch (Exception e) {
+                    // Fallback to simple console input if JLine fails
+                    logger.warning("JLine terminal setup failed, using simple console input: " + e.getMessage());
+                    java.util.Scanner scanner = new java.util.Scanner(System.in);
+                    
+                    while(!repl.isTerminating()) {
+                        try {
+                            System.out.print("MO> ");
+                            if (!scanner.hasNextLine()) break;
+                            String next = scanner.nextLine();
+                            if (next == null) break;
+
+                            String[] splits = next.trim().split(" ", 2);
+                            String left = splits.length == 1 ? "" : splits[1].trim();
+
+                            repl.command(splits[0], left);
+                        } catch (Exception ex) {
+                            logger.severe("REPL error: " + ex.getClass().getName() + " - " + ex.getMessage());
+                            break;
+                        }
+                    }
+                    scanner.close();
+                    return;
+                }
+                
+                // Main REPL loop with JLine
                 while(!repl.isTerminating()) {
                     try {
-                        System.setProperty("org.jline.terminal.dumb", "true");
-                        LineReader reader = LineReaderBuilder.builder()
-                                .terminal(TerminalBuilder.builder()
-                                        .system(true)
-                                        .dumb(true)
-                                        .build())
-                                .build();
                         String next = reader.readLine("MO> ");
                         if (next == null) break;
 
@@ -127,12 +142,7 @@ public class Main {
                     }
                 }
 
-                // Wait for program thread to finish
-                try {
-                    programThread.join();
-                } catch (InterruptedException e) {
-                    logger.warning("Program thread interrupted: " + e.getMessage());
-                }
+                // No need to wait for separate thread - program runs via REPL interaction
 
                 @SuppressWarnings("unchecked")
                 HashMap<String, Object> finalVars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
