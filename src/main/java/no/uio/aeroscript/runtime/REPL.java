@@ -116,11 +116,11 @@ public class REPL {
             printRepl("│ Command     │ Description                                │");
             printRepl("├─────────────┼────────────────────────────────────────────┤");
             printRepl("│ status      │ Show drone status and current mode         │");
-            printRepl("│ messages    │ List all available messages               │");
-            printRepl("│ message <id>│ Send a specific message to the drone      │");
-            printRepl("│ info        │ Show detailed system information          │");
-            printRepl("│ help        │ Show this help menu                       │");
-            printRepl("│ exit        │ Exit the mission control center          │");
+            printRepl("│ messages    │ List all available messages                │");
+            printRepl("│ message <id>│ Send a specific message to the drone       │");
+            printRepl("│ info        │ Show detailed system information           │");
+            printRepl("│ help        │ Show this help menu                        │");
+            printRepl("│ exit        │ Exit the mission control center            │");
             printRepl("└─────────────┴────────────────────────────────────────────┘");
             return true;
         }, "Show available commands and help", false, ""));
@@ -173,7 +173,7 @@ public class REPL {
             printRepl("├─────────────────────┼─────────────────────────────┤");
             printRepl(String.format("│ Position            │ %-27s │", drone.getCurrentPosition()));
             printRepl(String.format("│ Altitude            │ %-27.1f │", drone.getCurrentAltitude()));
-            printRepl(String.format("│ Battery Level       │ %-26.1f%% │", drone.getBatteryLevel()));
+            printRepl(String.format("│ Battery Level       │ %-27s │", String.format("%.1f%%", drone.getBatteryLevel())));
             printRepl(String.format("│ Distance Travelled  │ %-27.1f │", drone.getTotalDistanceTravelled()));
             printRepl(String.format("│ Current Mode        │ %-27s │", (initialMode != null ? initialMode.getName() : "Unknown")));
             printRepl(String.format("│ Available Messages  │ %-27d │", listeners.size()));
