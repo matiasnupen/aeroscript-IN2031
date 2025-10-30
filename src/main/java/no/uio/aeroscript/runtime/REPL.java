@@ -120,7 +120,9 @@ public class REPL {
             if (listener != null) {
                 // Add message to DroneState for MessageEvent detection
                 DroneState.getInstance().addReceivedMessage(param);
-                this.initialMode.receiveMessage(param);
+                if (this.initialMode != null) {
+                    this.initialMode.receiveMessage(param);
+                }
                 listener.run(); // Execute the listener
                 printRepl("Message sent: " + param);
             } else {
@@ -132,6 +134,16 @@ public class REPL {
             printRepl("Heap: " + heap);
             return true;
         }, "Prints the information on the heap", false, ""));
+        commands.put("status", new Command("status", this, (param) -> {
+            DroneState drone = DroneState.getInstance();
+            printRepl("Drone Status:");
+            printRepl("  Position: " + drone.getCurrentPosition());
+            printRepl("  Altitude: " + drone.getCurrentAltitude());
+            printRepl("  Battery: " + drone.getBatteryLevel() + "%");
+            printRepl("  Distance Travelled: " + drone.getTotalDistanceTravelled());
+            printRepl("  Available Messages: " + listeners.keySet());
+            return true;
+        }, "Shows current drone status and available messages", false, ""));
         commands.put("exit", new Command("exit", this, (param) -> {
             terminate();
             return true;

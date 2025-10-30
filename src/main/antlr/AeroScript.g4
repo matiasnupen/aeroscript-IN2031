@@ -50,7 +50,8 @@ SPEED   : 'speed';
 // Keyword for reactions
 ON      : 'on';
 OBSTACLE : 'obstacle';
-LOW_BATTERY : 'low_battery';
+LOW     : 'low';
+BATTERY : 'battery';
 MESSAGE : 'message';
 
 // Keywords for identifiers and literals
@@ -94,7 +95,7 @@ acDescend : DESCEND BY expression | DESCEND TO GROUND ;
 reaction : ON event ARROW ID ;
 
 // Define events
-event : OBSTACLE | LOW_BATTERY | MESSAGE LSQUARE ID RSQUARE ;
+event : OBSTACLE | LOW BATTERY | MESSAGE LSQUARE ID RSQUARE ;
 
 // Define expressions
 expression : NEG expression #NegExp

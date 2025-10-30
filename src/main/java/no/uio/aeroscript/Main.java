@@ -81,61 +81,47 @@ public class Main {
                 
                 REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getFirstExecution());
                 
+                // Start program execution in background thread
                 Thread programThread = new Thread(() -> {
                     try {
                         interpreter.executeProgram(modes);
+                        logger.info("Program execution completed - REPL remains active for further commands");
                     } catch (BatteryDepletedException e) {
-                        logger.info("Program terminated: " + e.getMessage());
-                        repl.terminate();
+                        logger.info("Program terminated: " + e.getMessage() + " - REPL remains active");
                     }
+                    // DON'T terminate REPL - keep it running for continuous interaction
                 });
 
-                Thread replThread = new Thread(() -> {
-                    System.out.println("Welcome to the AeroScript REPL!");
-                    while(!repl.isTerminating()) {
-                        try {
-                            System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
-                            LineReader reader = LineReaderBuilder.builder().build();
-                            String next = reader.readLine("MO> ");
-                            if (next == null) break;
-
-                            String[] splits = next.trim().split(" ", 2);
-                            String left = splits.length == 1 ? "" : splits[1].trim();
-
-                            if (repl.command(splits[0], left)) {
-                                // TODO: command executed successfully
-                            }
-                        } catch (Exception e) {
-                            logger.severe("REPL error: " + e.getMessage());
-                        }
-                    }
-                });
-
+                // Start the program thread
                 programThread.start();
-                replThread.start();
 
-                try {
-                    programThread.join();
-                    replThread.join();
-                } catch (InterruptedException e) {
-                    logger.severe("Thread interrupted: " + e.getMessage());
-                }
+                // Run REPL in main thread for better interaction
+                System.out.println("Welcome to the AeroScript REPL!");
+                System.out.println("Type 'help' for available commands or 'exit' to quit");
                 
                 while(!repl.isTerminating()) {
-                    System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
-                    LineReader reader = LineReaderBuilder.builder().build();
-                    String next;
-                    String left;
-                    String[] splits;
-                do {
-                    next = reader.readLine("MO> ");
-                    if (next == null) {
+                    try {
+                        System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
+                        LineReader reader = LineReaderBuilder.builder().build();
+                        String next = reader.readLine("MO> ");
+                        if (next == null) break;
+
+                        String[] splits = next.trim().split(" ", 2);
+                        String left = splits.length == 1 ? "" : splits[1].trim();
+
+                        repl.command(splits[0], left);
+                    } catch (Exception e) {
+                        logger.severe("REPL error: " + e.getMessage());
                         break;
                     }
-                    splits = next.trim().split(" ", 2);
-                    left = splits.length == 1 ? "" : splits[1].trim();
-                } while (!repl.command(splits[0], left));
-        }
+                }
+
+                // Wait for program thread to finish
+                try {
+                    programThread.join();
+                } catch (InterruptedException e) {
+                    logger.warning("Program thread interrupted: " + e.getMessage());
+                }
 
                 @SuppressWarnings("unchecked")
                 HashMap<String, Object> finalVars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);

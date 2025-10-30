@@ -34,6 +34,16 @@ import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 import no.uio.aeroscript.type.Range;
 
+/** Interpreter class
+ * @param heap is the memory heap for variable storage
+ * @param stack is the execution stack for statements
+ * @param methodTable stores method definitions
+ * @param firstExecution keeps the first execution mode
+ * @param allModes keeps track of all available modes, 
+ *  and it gets initialized at @param executeProgram(modes)
+ * @param pendingModeTransition keeps track of any pending mode transitions
+ * @param modeTransitionRequested indicates if a mode transition is requested
+ **/
 public class Interpreter extends AeroScriptBaseVisitor<Object> {
     private static final Logger logger = Logger.getLogger(Interpreter.class.getName());
 
@@ -45,6 +55,9 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     private Map<String, Runnable> listeners = new HashMap<>();
 
     private ArrayList<Mode> allModes;
+
+    private volatile Mode pendingModeTransition = null;
+    private volatile boolean modeTransitionRequested = false;
 
     public Interpreter(HashMap<Memory, Object> heap, Stack<Statement> stack) {
         this.heap = heap;
@@ -241,6 +254,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     
     /** Mode Execution
      * @param mode is the mode to be executed
+     * The executeMode method handles:
+     * - Pre-action checks for message-triggered transitions
+     * - Post-action checks for message-triggered transitions
+     * - Post-action checks for other event-based reactions (obstacle, low_battery, etc.)
      * @throws BatteryDepletedException if battery depletes during execution
      * @logger logs the entering and completion of modes, as well as battery depletion events */
     public void executeMode(Mode mode) throws BatteryDepletedException {
@@ -249,6 +266,22 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
         // Execute all statements in this mode
         for (Statement statement : mode.getStatements()) {
+            // BEFORE ACTION: Check for message-triggered transitions
+            if (modeTransitionRequested && pendingModeTransition != null) {
+                logger.info("Interrupting current mode '" + mode.getName() + "' for message-triggered transition to mode '" + pendingModeTransition.getName() + "'\n");
+                Mode targetMode = pendingModeTransition;
+                pendingModeTransition = null;
+                modeTransitionRequested = false;
+                executeMode(targetMode);
+                return; // Exit current mode execution after transition
+            }
+
+            try {
+                Thread.sleep(100); // Small delay to allow listener threads to process events
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
+
             // Pre-check battery level before attempting action
             if (droneState.getBatteryLevel() <= 0.0f) {
                 throw new BatteryDepletedException(droneState.getBatteryLevel(), "PreCheck");
@@ -258,14 +291,25 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                 try {
                     executeAction((Action) statement);
 
-                    // After action execution, check for reactions
+                    // AFTER ACTION: Check for message-triggered transitions again
+                    if (modeTransitionRequested && pendingModeTransition != null) {
+                        logger.info("Message-triggered transition detected after action in mode '" + mode.getName() + "'. Transitioning to mode '" + pendingModeTransition.getName() + "'\n");
+                        Mode targetMode = pendingModeTransition;
+                        pendingModeTransition = null;
+                        modeTransitionRequested = false;
+                        executeMode(targetMode);
+                        return; // Exit current mode execution after transition
+                    }
+
+                    // AFTER ACTION: Check for other event-based reactions (obstacle, low_battery, etc.)
                     String reactionTarget = mode.checkReactions(DroneState.getInstance());
                     if (reactionTarget != null) {
-                        logger.info("Reaction triggered! Transitioning to: " + reactionTarget);
+                        logger.info("Event-based reaction triggered! Transitioning to: " + reactionTarget);
                         Mode targetMode = findModeByName(getAllModes(), reactionTarget);
                         if (targetMode != null) {
                             executeMode(targetMode);
 
+                            // Continue with normal flow after reaction mode
                             String nextModeName = targetMode.getNextModeName();
                             while (nextModeName != null) {
                                 Mode nextMode = findModeByName(getAllModes(), nextModeName);
@@ -294,7 +338,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     }
 
     private ArrayList<Mode> getAllModes() {
-        return new ArrayList<>();
+        return allModes;
     }
 
     /** Find the initial mode and execute it
@@ -304,7 +348,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
      * @logger logs the start and end of program execution, as well as battery depletion events
      * @throws BatteryDepletedException if battery depletes during execution */
     public void executeProgram(ArrayList<Mode> modes) {
-        this.allModes = modes; // At the start of program execution
+        this.allModes = modes; // At the start of program execution copy modes to allModes
         
         DroneState droneState = DroneState.getInstance();
         droneState.setCurrentPosition((Point) getVariable("initial position"));
@@ -321,7 +365,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         for (Mode mode : modes) {
             if (mode.isInitial()) {
                 initialMode = mode;
-                firstExecution = mode; 
+                setFirstExecution(mode);
                 break;
             }
         }
@@ -379,34 +423,21 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                             Mode targetMode = findModeByName(modes, targetModeName);
 
                             if (targetMode != null) {
-                                logger.info("Transitioning to mode: " + targetModeName + " due to message event.");
-                                // TODO: Implement mode transition logic from a message
-                                try {
-                                    executeMode(targetMode);
-
-                                    String nextModeName = targetMode.getNextModeName();
-                                    while(nextModeName != null) {
-                                        Mode nextMode = findModeByName(modes, nextModeName);
-                                        if (nextMode != null) {
-                                            executeMode(nextMode);
-                                            nextModeName = nextMode.getNextModeName();
-                                        } else {
-                                            logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
-                                            break;
-                                        }
-                                    }
-                                } catch (BatteryDepletedException e) {
-                                    logger.info("PROGRAM TERMINATED DUE TO BATTERY DEPLETION" +
-                                    "\n\tFinal Status: " + e.getMessage() +
-                                    "\n\tFinal Battery Level: " + e.getCurrentBatteryLevel() + "%\n"
-                                    );
-                                }
+                                logger.info("Requesting transition to mode: " + targetModeName + " due to message event.");
+                                requestModeTransition(targetMode);
+                            } else {
+                                logger.warning("Target mode '" + targetModeName + "' not found for message: " + messageEvent.getMessageId());
                             }
                         });
                     }
                 }
             }
         }
+    }
+    public void requestModeTransition(Mode targetMode) {
+        this.pendingModeTransition = targetMode;
+        this.modeTransitionRequested = true;
+        logger.info("Mode transition requested to: " + targetMode.getName());
     }
 
     /** Finds a mode by its name
@@ -488,7 +519,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     public Event visitEvent(AeroScriptParser.EventContext ctx) {
         if (ctx.OBSTACLE() != null) {
             return new ObstacleEvent();
-        } else if (ctx.LOW_BATTERY() != null) {
+        } else if (ctx.LOW() != null && ctx.BATTERY() != null) {
             return new LowBatteryEvent();
         } else if (ctx.MESSAGE() != null) {
             String messageId = ctx.ID().getText();
