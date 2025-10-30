@@ -116,17 +116,20 @@ public class REPL {
         commands.put("help", new Command("help", this, (param) -> false, commands.keySet().toString(), false, ""));
         // for command "message" we get the message passed as parameter, we need to add the trigger for the listener
         commands.put("message", new Command("message", this, (param) -> {
+            if (param.trim().isEmpty()) {
+                printRepl("Available messages: " + listeners.keySet());
+                return true;
+            }
+
             Runnable listener = listeners.get(param);
             if (listener != null) {
                 // Add message to DroneState for MessageEvent detection
                 DroneState.getInstance().addReceivedMessage(param);
-                if (this.initialMode != null) {
-                    this.initialMode.receiveMessage(param);
-                }
                 listener.run(); // Execute the listener
                 printRepl("Message sent: " + param);
             } else {
                 printRepl("No listener for message: " + param);
+                printRepl("Available messages: " + listeners.keySet());
             }
             return true;
         }, "Send a message to the listener", true, "The message to send"));
@@ -141,6 +144,7 @@ public class REPL {
             printRepl("  Altitude: " + drone.getCurrentAltitude());
             printRepl("  Battery: " + drone.getBatteryLevel() + "%");
             printRepl("  Distance Travelled: " + drone.getTotalDistanceTravelled());
+            printRepl("  Current Mode: " + (initialMode != null ? initialMode.getName() : "Unknown"));
             printRepl("  Available Messages: " + listeners.keySet());
             return true;
         }, "Shows current drone status and available messages", false, ""));

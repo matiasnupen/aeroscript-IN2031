@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.TerminalBuilder;
 
 import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
@@ -101,8 +102,13 @@ public class Main {
                 
                 while(!repl.isTerminating()) {
                     try {
-                        System.setProperty("org.jline.terminal", "jline.UnsupportedTerminal");
-                        LineReader reader = LineReaderBuilder.builder().build();
+                        System.setProperty("org.jline.terminal.dumb", "true");
+                        LineReader reader = LineReaderBuilder.builder()
+                                .terminal(TerminalBuilder.builder()
+                                        .system(true)
+                                        .dumb(true)
+                                        .build())
+                                .build();
                         String next = reader.readLine("MO> ");
                         if (next == null) break;
 
@@ -110,8 +116,13 @@ public class Main {
                         String left = splits.length == 1 ? "" : splits[1].trim();
 
                         repl.command(splits[0], left);
+                    } catch (org.jline.reader.EndOfFileException e) {
+                        // Expected when input is closed, exit gracefully
+                        logger.info("Input closed, terminating REPL");
+                        break;
                     } catch (Exception e) {
-                        logger.severe("REPL error: " + e.getMessage());
+                        logger.severe("REPL error: " + e.getClass().getName() + " - " + e.getMessage());
+                        e.printStackTrace();
                         break;
                     }
                 }

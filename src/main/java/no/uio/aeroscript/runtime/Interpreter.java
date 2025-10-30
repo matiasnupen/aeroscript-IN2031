@@ -56,6 +56,8 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
 
     private ArrayList<Mode> allModes;
 
+    private Mode currentMode = null;
+
     private volatile Mode pendingModeTransition = null;
     private volatile boolean modeTransitionRequested = false;
 
@@ -67,6 +69,10 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     public void setFirstExecution(Mode firstExecution) { this.firstExecution = firstExecution; }
     public Mode getFirstExecution() { return firstExecution; }
     public Map<String, Runnable> getListeners() { return listeners; }
+
+    public Mode getCurrentMode() { return currentMode; }
+    public void setCurrentMode(Mode mode) { this.currentMode = mode; }
+    private ArrayList<Mode> getAllModes() { return allModes; }
 
     private Object getVariable(String varName) {
         HashMap<String, Object> vars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
@@ -261,84 +267,87 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
      * @throws BatteryDepletedException if battery depletes during execution
      * @logger logs the entering and completion of modes, as well as battery depletion events */
     public void executeMode(Mode mode) throws BatteryDepletedException {
+        setCurrentMode(mode);
         logger.info("ENTERING MODE: " + mode.getName() + "\n");
         DroneState droneState = DroneState.getInstance();
 
-        // Execute all statements in this mode
+        // Check if this mode has only reactions (no actions)
+        boolean hasActions = false;
+        boolean hasReactions = false;
         for (Statement statement : mode.getStatements()) {
-            // BEFORE ACTION: Check for message-triggered transitions
-            if (modeTransitionRequested && pendingModeTransition != null) {
-                logger.info("Interrupting current mode '" + mode.getName() + "' for message-triggered transition to mode '" + pendingModeTransition.getName() + "'\n");
-                Mode targetMode = pendingModeTransition;
-                pendingModeTransition = null;
-                modeTransitionRequested = false;
-                executeMode(targetMode);
-                return; // Exit current mode execution after transition
-            }
-
-            try {
-                Thread.sleep(100); // Small delay to allow listener threads to process events
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // Restore interrupted status
-            }
-
-            // Pre-check battery level before attempting action
-            if (droneState.getBatteryLevel() <= 0.0f) {
-                throw new BatteryDepletedException(droneState.getBatteryLevel(), "PreCheck");
-            }
-
             if (statement instanceof Action) {
+                hasActions = true;
+            } else if (statement instanceof Reaction) {
+                hasReactions = true;
+            }
+        }
+
+        // Handle modes with only reactions (no actions) - wait for events
+        if (!hasActions && hasReactions) {
+            logger.info("Mode '" + mode.getName() + "' has only reactions. Waiting for events...\n");
+
+            while (!modeTransitionRequested) {
                 try {
-                    executeAction((Action) statement);
+                    Thread.sleep(100); // Wait for message events
 
-                    // AFTER ACTION: Check for message-triggered transitions again
-                    if (modeTransitionRequested && pendingModeTransition != null) {
-                        logger.info("Message-triggered transition detected after action in mode '" + mode.getName() + "'. Transitioning to mode '" + pendingModeTransition.getName() + "'\n");
-                        Mode targetMode = pendingModeTransition;
-                        pendingModeTransition = null;
-                        modeTransitionRequested = false;
-                        executeMode(targetMode);
-                        return; // Exit current mode execution after transition
-                    }
-
-                    // AFTER ACTION: Check for other event-based reactions (obstacle, low_battery, etc.)
-                    String reactionTarget = mode.checkReactions(DroneState.getInstance());
-                    if (reactionTarget != null) {
-                        logger.info("Event-based reaction triggered! Transitioning to: " + reactionTarget);
-                        Mode targetMode = findModeByName(getAllModes(), reactionTarget);
+                    // Check for other event-based reactions (obstacle, low_battery, etc.)
+                    String targetModeName = mode.checkReactions(droneState);
+                    if (targetModeName != null) {
+                        Mode targetMode = findModeByName(getAllModes(), targetModeName);
                         if (targetMode != null) {
+                            logger.info("Transitioning to mode: " + targetModeName + " due to event reaction");
                             executeMode(targetMode);
-
-                            // Continue with normal flow after reaction mode
-                            String nextModeName = targetMode.getNextModeName();
-                            while (nextModeName != null) {
-                                Mode nextMode = findModeByName(getAllModes(), nextModeName);
-                                if (nextMode != null) {
-                                    executeMode(nextMode);
-                                    nextModeName = nextMode.getNextModeName();
-                                } else {
-                                    logger.info("WARNING: Next mode '" + nextModeName + "' not found. Terminating.\n");
-                                    break;
-                                }
-                            }
-                        } 
-                        return; // Exit current mode execution after reaction
+                            return;
+                        }
                     }
-                } catch (BatteryDepletedException e) {
-                    logger.warning("BATTERY DEPLETION DETECTED" + 
-                    "\n\tMode: " + mode.getName() + 
-                    "\n\tReason: " + e.getMessage() + 
-                    "\n\tTERMINATING EXECUTION\n"
-                    );
-                    throw e; // Re-throw to stop execution at higher level
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.info("Mode execution interrupted while waiting for events.\n");
+                    return;
+                }
+            }
+
+            // If we reach here, a mode transition was requested via message
+            if (pendingModeTransition != null) {
+                modeTransitionRequested = false;
+                executeMode(pendingModeTransition);
+                pendingModeTransition = null;
+            }
+            return;
+        }
+
+        // Handle modes with actions
+        if (hasActions) {
+            for (Statement statement : mode.getStatements()) {
+                if (statement instanceof Action) {
+                    executeAction((Action) statement);
+                    // Check for reactions after each action
+                    String targetModeName = mode.checkReactions(droneState);
+                    if (targetModeName != null) {
+                        Mode targetMode = findModeByName(getAllModes(), targetModeName);
+                        if (targetMode != null) {
+                            logger.info("Transitioning to mode: " + targetModeName + " due to event reaction");
+                            executeMode(targetMode);
+                            return;
+                        }
+                    }
                 }
             }
         }
-        logger.info("MODE COMPLETED: " + mode.getName() + "\n");
-    }
 
-    private ArrayList<Mode> getAllModes() {
-        return allModes;
+        // Handle normal mode transitions after all actions are completed
+        if (mode.hasTransition()) {
+            String nextModeName = mode.getNextModeName();
+            Mode nextMode = findModeByName(getAllModes(), nextModeName);
+            if (nextMode != null) {
+                logger.info("Transitioning to next mode: " + nextModeName + "\n");
+                executeMode(nextMode);
+            } else {
+                logger.info("WARNING: Next mode '" + nextModeName + "' not found.\n");
+            }
+        } else {
+            logger.info("MODE COMPLETED: " + mode.getName() + " with no further transitions.\n");
+        }
     }
 
     /** Find the initial mode and execute it
@@ -519,7 +528,7 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
     public Event visitEvent(AeroScriptParser.EventContext ctx) {
         if (ctx.OBSTACLE() != null) {
             return new ObstacleEvent();
-        } else if (ctx.LOW() != null && ctx.BATTERY() != null) {
+        } else if (ctx.LOW_BATTERY() != null) {
             return new LowBatteryEvent();
         } else if (ctx.MESSAGE() != null) {
             String messageId = ctx.ID().getText();
