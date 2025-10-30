@@ -130,10 +130,9 @@ public class REPL {
             if (listeners.isEmpty()) {
                 printRepl("No messages available in current mode.");
             } else {
-                printRepl("You can send the following messages:");
                 int count = 1;
                 for (String messageId : listeners.keySet()) {
-                    printRepl("  " + count + ". " + messageId);
+                    printRepl(count + ". " + messageId);
                     count++;
                 }
                 printRepl("");
@@ -186,11 +185,15 @@ public class REPL {
 
         commands.put("info", new Command("info", this, (param) -> {
             printRepl("=== SYSTEM INFORMATION ===");
-            printRepl("Memory Heap: " + heap);
-            printRepl("Listeners: " + listeners.keySet());
-            printRepl("Commands: " + commands.keySet());
+            printRepl("Available Commands: " + commands.size());
+            printRepl("Active Listeners: " + listeners.size());
+            printRepl("Memory Variables: " + heap.size());
+            if (initialMode != null) {
+                printRepl("Current Mode: " + initialMode.getName());
+            }
+            printRepl("System: AeroScript Mission Control v1.0");
             return true;
-        }, "Show detailed system information", false, ""));
+        }, "Show system information", false, ""));
 
         commands.put("exit", new Command("exit", this, (param) -> {
             printRepl("=== MISSION CONTROL SHUTDOWN ===");

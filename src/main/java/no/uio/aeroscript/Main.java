@@ -84,9 +84,15 @@ public class Main {
                 
                 REPL repl = new REPL(heap, interpreter.getListeners(), interpreter.getCurrentMode());
 
-                // Run REPL in main thread for better interaction
-                System.out.println("Welcome to the AeroScript REPL!");
-                System.out.println("Type 'help' for available commands or 'exit' to quit");
+                // Display simple launch screen
+                System.out.println("\n" + "=".repeat(60));
+                System.out.println("           AEROSCRIPT MISSION CONTROL");
+                System.out.println("=".repeat(60));
+                System.out.printf("Mission File: %s\n", path);
+                System.out.printf("Battery: %.1f%% | Position: %s\n", batteryLevel, initialPosition);
+                System.out.println("-".repeat(60));
+                System.out.println("System ready! Type 'help' for commands or 'exit' to quit");
+                System.out.println("=".repeat(60) + "\n");
                 
                 // Create the terminal and reader once, outside the loop
                 LineReader reader = null;
