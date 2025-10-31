@@ -155,18 +155,28 @@ public class Main {
                 Float finalBatteryLevel = (Float) finalVars.get("battery level");
                 Float distanceTravelled = (Float) finalVars.get("distance travelled");
 
-                logger.info("SESSION COMPLETED" + 
-                "\n\t" + "Initial Position: " + initialPosition + 
-                "\n\t" + "Initial Battery Level: " + initialBatteryLevel + "%" +
-                "\n\t" + "Final Position: " + finalPosition +
-                "\n\t" + "Final Battery Level: " + finalBatteryLevel + "%" +
-                "\n\t" + "Distance Travelled: " + distanceTravelled + "\n"
-                );
+                displaySessionSummary(path, initialPosition, initialBatteryLevel, finalPosition, finalBatteryLevel, distanceTravelled);
             } catch (ParseCancellationException e) {
                 logger.severe("Parser error: " + e.getMessage());
             }
         }  catch (/*IOException e*/Exception e) {
             logger.severe("Error reading file: " + e.getMessage());
         }
+    }
+    
+    private static void displaySessionSummary(String missionFile, Point initialPos, Float initialBattery, 
+                                            Point finalPos, Float finalBattery, Float distance) {
+        System.out.println();
+        System.out.println("=".repeat(50));
+        System.out.println("           SESSION COMPLETED");
+        System.out.println("=".repeat(50));
+        System.out.printf("Session File    : %s%n", missionFile);
+        System.out.printf("Initial Position: %s%n", initialPos);
+        System.out.printf("Final Position  : %s%n", finalPos);
+        System.out.printf("Initial Battery : %.1f%%%n", initialBattery);
+        System.out.printf("Final Battery   : %.1f%%%n", finalBattery);
+        System.out.printf("Distance Flown  : %.1f units%n", distance);
+        System.out.println("=".repeat(50));
+        System.out.println();
     }
 }
