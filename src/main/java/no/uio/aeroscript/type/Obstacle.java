@@ -31,4 +31,9 @@ public class Obstacle {
         isDiscovered = true;
     }
 
+    @Override
+    public String toString() {
+        return obstacleName +" at: " + location.toString();
+    }
+
 }

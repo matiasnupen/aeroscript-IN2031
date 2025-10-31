@@ -2,6 +2,7 @@ package no.uio.aeroscript.runtime;
 
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.type.Obstacle;
 import no.uio.aeroscript.runtime.DroneState;
 
 import java.time.Duration;
@@ -117,7 +118,9 @@ public class REPL {
             printRepl("├─────────────┼────────────────────────────────────────────┤");
             printRepl("│ status      │ Show drone status and current mode         │");
             printRepl("│ messages    │ List all available messages                │");
+            printRepl("│ obstacles   │ Shows all detected obstacles               │");
             printRepl("│ message <id>│ Send a specific message to the drone       │");
+            printRepl("│ obstacle x,y│ Simulate obstacle detection at coordinates │");
             printRepl("│ info        │ Show detailed system information           │");
             printRepl("│ help        │ Show this help menu                        │");
             printRepl("│ exit        │ Exit the mission control center            │");
@@ -194,6 +197,60 @@ public class REPL {
             printRepl("System: AeroScript Mission Control v1.0");
             return true;
         }, "Show system information", false, ""));
+
+        commands.put("obstacles", new Command("obstacles", this, (param) -> {
+            DroneState droneState = DroneState.getInstance();
+            printRepl("=== DETECTED OBSTACLES ===");
+            if (droneState.getDetectedObstacles().isEmpty()) {
+                printRepl("No obstacles detected.");
+            } else {
+                int count = 1;
+                for (Obstacle obstacle : droneState.getDetectedObstacles()) {
+                    printRepl(count + ". " + obstacle);
+                    count++;
+                }
+            }
+            return true;
+        }, "Show all detected obstacles", false, ""));
+
+        commands.put("obstacle", new Command("obstacle", this, (param) -> {
+            if (param.trim().isEmpty()) {
+                printRepl("Please specify obstacle coordinates.");
+                printRepl("Usage: obstacle <x> <y> or obstacle <x,y>");
+                printRepl("Example: obstacle 10.5 20.0 or obstacle 10.5,20.0");
+                return true;
+            }
+            
+            String[] coords;
+            // Check if parameter contains comma (for x,y format)
+            if (param.contains(",")) {
+                coords = param.trim().split("\\s*,\\s*"); // Split by comma with optional spaces
+            } else {
+                coords = param.trim().split("\\s+"); // Split by spaces
+            }
+            
+            if (coords.length != 2) {
+                printRepl("ERROR: Invalid coordinates format.");
+                printRepl("Usage: obstacle <x> <y> or obstacle <x,y>");
+                return true;
+            }
+            
+            try {
+                float x = Float.parseFloat(coords[0]);
+                float y = Float.parseFloat(coords[1]);
+                no.uio.aeroscript.type.Point obstacleLocation = new no.uio.aeroscript.type.Point(x, y);
+                no.uio.aeroscript.type.Obstacle obstacle = new no.uio.aeroscript.type.Obstacle("Simulated Obstacle", obstacleLocation);
+                
+                DroneState.getInstance().discoverObstacle(obstacle);
+                printRepl(">>> OBSTACLE DETECTED at (" + x + ", " + y + ")!");
+                printRepl(">>> Obstacle event triggered!");
+                
+            } catch (NumberFormatException e) {
+                printRepl("ERROR: Invalid number format. Use decimal numbers.");
+                printRepl("Example: obstacle 10.5 20.0 or obstacle 10.5,20.0");
+            }
+            return true;
+        }, "Simulate an obstacle detection", true, "X Y coordinates"));
 
         commands.put("exit", new Command("exit", this, (param) -> {
             printRepl("=== MISSION CONTROL SHUTDOWN ===");
