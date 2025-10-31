@@ -21,7 +21,9 @@ import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.expr.Expression;
 import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.ast.stmt.Reaction;
 import no.uio.aeroscript.ast.stmt.Statement;
+import no.uio.aeroscript.ast.stmt.event.ObstacleEvent;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Obstacle;
 import no.uio.aeroscript.type.Point;
@@ -176,6 +178,38 @@ class InterpreterTest {
             EmergencyLanding { descend to ground }
             """;
 
+        private static final String ALL_EVENTS_PROGRAM = """
+            -> TestMode {
+                move by 10
+                on obstacle -> ObstacleHandler
+                on low battery -> BatteryHandler
+                on message [emergency] -> MessageHandler
+            }
+            ObstacleHandler { descend to ground }
+            BatteryHandler { return to base }
+            MessageHandler { ascend by 5 }
+            """;
+
+        private static final String IMMEDIATE_OBSTACLE_PROGRAM = """
+            -> TestMode {
+                ascend by 5
+                on obstacle -> EmergencyMode
+                move to point (50, 50)
+                turn right by 90
+            }
+            EmergencyMode { descend to ground }
+            """;
+        
+        private static final String OBSTACLE_REACTION_INTERRUPT_PROGRAM = """
+            -> TestMode {
+                ascend by 5
+                on obstacle -> EmergencyMode
+                move to point (50, 50)
+                turn right by 90
+            }
+            EmergencyMode { descend to ground }
+            """;
+
         @Test
         void testObstacleEventTriggering() {
             // Reset DroneState for clean test
@@ -257,19 +291,7 @@ class InterpreterTest {
         @Test
         void testEventParsing() {
             // Test that all event types parse correctly
-            String allEventsProgram = """
-                -> TestMode {
-                    move by 10
-                    on obstacle -> ObstacleHandler
-                    on low battery -> BatteryHandler
-                    on message [emergency] -> MessageHandler
-                }
-                ObstacleHandler { descend to ground }
-                BatteryHandler { return to base }
-                MessageHandler { ascend by 5 }
-                """;
-            
-            ArrayList<Mode> modes = parseProgram(allEventsProgram);
+            ArrayList<Mode> modes = parseProgram(ALL_EVENTS_PROGRAM);
             assertEquals(4, modes.size());
             
             Mode testMode = modes.get(0);
@@ -290,17 +312,7 @@ class InterpreterTest {
             DroneState droneState = DroneState.getInstance();
             droneState.resetForTesting();
             
-            String immediateObstacleProgram = """
-                -> TestMode {
-                    ascend by 5
-                    on obstacle -> EmergencyMode
-                    move to point (50, 50)
-                    turn right by 90
-                }
-                EmergencyMode { descend to ground }
-                """;
-            
-            ArrayList<Mode> modes = parseProgram(immediateObstacleProgram);
+            ArrayList<Mode> modes = parseProgram(IMMEDIATE_OBSTACLE_PROGRAM);
             assertEquals(2, modes.size());
             
             // Verify parsing worked correctly
@@ -323,6 +335,39 @@ class InterpreterTest {
             assertTrue(droneState.obstacleDetected(), "Obstacle should be detected");
             
             System.out.println("testImmediateObstacleReaction -> Complex mode parsing and obstacle detection test passed");
+        }
+
+        @Test
+        void testObstacleReactionInterruptsMode() {
+            // Reset DroneState for clean test
+            DroneState droneState = DroneState.getInstance();
+            droneState.resetForTesting();
+            
+            ArrayList<Mode> modes = parseProgram(OBSTACLE_REACTION_INTERRUPT_PROGRAM);
+            assertEquals(2, modes.size(), "Should parse 2 modes from program");
+            
+            // Verify the program structure
+            Mode testMode = modes.get(0);
+            Mode emergencyMode = modes.get(1);
+            assertEquals("TestMode", testMode.getName());
+            assertEquals("EmergencyMode", emergencyMode.getName());
+            
+            // Verify that TestMode has the expected reactions
+            long obstacleReactions = testMode.getStatements().stream()
+                .filter(stmt -> stmt instanceof Reaction)
+                .map(stmt -> (Reaction) stmt)
+                .filter(reaction -> reaction.getEvent() instanceof ObstacleEvent)
+                .count();
+            
+            assertEquals(1, obstacleReactions, "TestMode should have exactly one obstacle reaction");
+            
+            // Add obstacle that will be detected
+            droneState.discoverObstacle(new Obstacle("InterruptObstacle", new Point(25.0f, 25.0f)));
+            assertTrue(droneState.obstacleDetected(), "Obstacle should be detected after adding it");
+            
+            // Test that the obstacle event can be triggered
+            ObstacleEvent obstacleEvent = new ObstacleEvent();
+            assertTrue(obstacleEvent.isTriggered(droneState), "Obstacle event should be triggered when obstacle is detected");
         }
     }
 

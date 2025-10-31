@@ -109,6 +109,18 @@ public class REPL {
         return result;
     }
 
+    /** Initialize the available commands for the REPL
+     * @command status - Show drone status and current mode
+     * @command messages - List all available messages
+     * @command obstacles - Simulate obstacle detection at coordinates
+     * @command message - Send a specific message to the drone
+     * @command obstacle - Creates an obstacle detection at coordinates
+     * @command info - Show detailed system information
+     * @command help - Show available commands and help
+     * @command exit - Exit the mission control center
+     * 
+     * Each command has a design that shows the necessary information in a clear format.
+     */
     private void initCommands() {
         commands.put("help", new Command("help", this, (param) -> {
             printRepl("=== AEROSCRIPT MISSION CONTROL CENTER ===");
