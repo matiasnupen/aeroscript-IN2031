@@ -137,6 +137,23 @@ public class DroneState {
         return getBatteryLevel() <= 20.0f;
     }
 
+    /**
+     * Reset drone state for testing purposes
+     * Clears obstacles, messages, and resets to initial state
+     */
+    public void resetForTesting() {
+        this.currentPosition = new Point(0, 0);
+        // base is final, so we keep the original base position
+        this.currentAltitude = 0.0f;
+        this.currentPointingDirection = 0.0f;
+        this.batteryLevel = 100.0f;
+        this.isFlying = false;
+        this.totalDistanceTravelled = 0.0f;
+        this.detectedObstacles.clear();
+        this.messageIds.clear();
+        logger.info("DroneState reset for testing");
+    }
+
     @Override
     public String toString() {
         return "DroneState{" +

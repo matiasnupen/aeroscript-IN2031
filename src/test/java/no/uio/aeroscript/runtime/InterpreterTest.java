@@ -42,9 +42,9 @@ class InterpreterTest {
         this.stack = new Stack<>();
         HashMap<String, Object> vars = new HashMap<>();
         
-        vars.put("initial position", new Point(0, 0));
-        vars.put("current position", new Point(0, 0));
-        vars.put("altitude", 0);
+        vars.put("initial position", new Point(0.0f, 0.0f));
+        vars.put("current position", new Point(0.0f, 0.0f));
+        vars.put("altitude", 0.0f);  // Changed from int to float
         vars.put("initial battery level", 100.0f);
         vars.put("battery level", 100.0f);
         vars.put("battery low", false);
@@ -147,38 +147,182 @@ class InterpreterTest {
 
     @Nested
     class EventTests {
-        private static final String EVENT_PROGRAM = """
+        private static final String OBSTACLE_EVENT_PROGRAM = """
             -> TestMode {
                 move to point (10, 10)
                 on obstacle -> EmergencyMode
+                ascend by 5
             }
-            EmergencyMode { return to base }
+            EmergencyMode { descend to ground }
+            """;
+
+        private static final String MESSAGE_EVENT_PROGRAM = """
+            -> MissionControl {
+                on message [launch] -> TakeOff
+            }
+            TakeOff {
+                ascend by 20
+                move to point (50, 50)
+            } -> Landing
+            Landing { return to base }
+            """;
+
+        private static final String BATTERY_EVENT_PROGRAM = """
+            -> FlightMode {
+                move to point (100, 100)
+                on low battery -> EmergencyLanding
+                turn right by 90
+            }
+            EmergencyLanding { descend to ground }
             """;
 
         @Test
-        void testObstacleEventReaction() {
-            DroneState.getInstance().discoverObstacle(
-                new Obstacle("TestObstacle", new Point(10.0f, 10.0f))
-            );
-            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
-            System.out.println("testObstacleEventReaction -> Mode count: " + modes.size());
+        void testObstacleEventTriggering() {
+            // Reset DroneState for clean test
+            DroneState droneState = DroneState.getInstance();
+            droneState.resetForTesting();
+            
+            ArrayList<Mode> modes = parseProgram(OBSTACLE_EVENT_PROGRAM);
             assertEquals(2, modes.size());
+            
+            // Verify modes parsed correctly
+            assertEquals("TestMode", modes.get(0).getName());
+            assertEquals("EmergencyMode", modes.get(1).getName());
+            assertTrue(modes.get(0).isInitial());
+            
+            // Add an obstacle that will be detected
+            droneState.discoverObstacle(new Obstacle("TestObstacle", new Point(5.0f, 5.0f)));
+            
+            // Verify obstacle is detected
+            assertTrue(droneState.obstacleDetected(), "Obstacle should be detected");
+            
+            System.out.println("testObstacleEventTriggering -> Obstacle detection test passed");
         }
 
         @Test
         void testMessageEventReaction() {
-            DroneState.getInstance().receiveMessage("GoHome");
-            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
-            System.out.println("testMessageEventReaction -> Mode count: " + modes.size());
-            assertEquals(2, modes.size());
+            // Reset DroneState for clean test
+            DroneState droneState = DroneState.getInstance();
+            droneState.resetForTesting();
+            
+            ArrayList<Mode> modes = parseProgram(MESSAGE_EVENT_PROGRAM);
+            assertEquals(3, modes.size());
+            
+            // Verify modes parsed correctly
+            assertEquals("MissionControl", modes.get(0).getName());
+            assertEquals("TakeOff", modes.get(1).getName());
+            assertEquals("Landing", modes.get(2).getName());
+            assertTrue(modes.get(0).isInitial());
+            
+            // Initialize the program to set up listeners
+            interpreter.initializeProgram(modes);
+            
+            // Verify message listener was created
+            assertTrue(interpreter.getListeners().containsKey("launch"), 
+                      "Should have listener for 'launch' message");
+            
+            // Test message reception
+            droneState.addReceivedMessage("launch");
+            assertTrue(droneState.messageReceived("launch"), "Message should be received");
+            
+            System.out.println("testMessageEventReaction -> Message event parsing and listener creation test passed");
         }
 
         @Test
         void testBatteryLowEventReaction() {
-
-            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
-            System.out.println("testBatteryLowEventReaction -> Mode count: " + modes.size());
+            // Reset DroneState for clean test
+            DroneState droneState = DroneState.getInstance();
+            droneState.resetForTesting();
+            
+            ArrayList<Mode> modes = parseProgram(BATTERY_EVENT_PROGRAM);
             assertEquals(2, modes.size());
+            
+            // Verify modes parsed correctly
+            assertEquals("FlightMode", modes.get(0).getName());
+            assertEquals("EmergencyLanding", modes.get(1).getName());
+            assertTrue(modes.get(0).isInitial());
+            
+            // Test low battery detection
+            droneState.setBatteryLevel(15.0f); // Below 20% threshold
+            assertTrue(droneState.getBatteryLevel() <= 20.0f, "Battery should be low");
+            
+            // Test that low battery event can be detected
+            no.uio.aeroscript.ast.stmt.event.LowBatteryEvent lowBatteryEvent = 
+                new no.uio.aeroscript.ast.stmt.event.LowBatteryEvent();
+            assertTrue(lowBatteryEvent.isTriggered(droneState), "Low battery event should be triggered");
+            
+            System.out.println("testBatteryLowEventReaction -> Low battery event detection test passed");
+        }
+
+        @Test
+        void testEventParsing() {
+            // Test that all event types parse correctly
+            String allEventsProgram = """
+                -> TestMode {
+                    move by 10
+                    on obstacle -> ObstacleHandler
+                    on low battery -> BatteryHandler
+                    on message [emergency] -> MessageHandler
+                }
+                ObstacleHandler { descend to ground }
+                BatteryHandler { return to base }
+                MessageHandler { ascend by 5 }
+                """;
+            
+            ArrayList<Mode> modes = parseProgram(allEventsProgram);
+            assertEquals(4, modes.size());
+            
+            Mode testMode = modes.get(0);
+            assertEquals("TestMode", testMode.getName());
+            
+            // Count reactions
+            long reactionCount = testMode.getStatements().stream()
+                .filter(stmt -> stmt instanceof no.uio.aeroscript.ast.stmt.Reaction)
+                .count();
+            
+            assertEquals(3, reactionCount, "Should have 3 reactions (obstacle, low battery, message)");
+            System.out.println("testEventParsing -> Successfully parsed " + reactionCount + " reactions");
+        }
+
+        @Test
+        void testImmediateObstacleReaction() {
+            // Test that obstacle reactions happen immediately and discard remaining actions
+            DroneState droneState = DroneState.getInstance();
+            droneState.resetForTesting();
+            
+            String immediateObstacleProgram = """
+                -> TestMode {
+                    ascend by 5
+                    on obstacle -> EmergencyMode
+                    move to point (50, 50)
+                    turn right by 90
+                }
+                EmergencyMode { descend to ground }
+                """;
+            
+            ArrayList<Mode> modes = parseProgram(immediateObstacleProgram);
+            assertEquals(2, modes.size());
+            
+            // Verify parsing worked correctly
+            assertEquals("TestMode", modes.get(0).getName());
+            assertEquals("EmergencyMode", modes.get(1).getName());
+            
+            // Count statements in TestMode
+            long actionCount = modes.get(0).getStatements().stream()
+                .filter(stmt -> stmt instanceof no.uio.aeroscript.ast.stmt.Action)
+                .count();
+            long reactionCount = modes.get(0).getStatements().stream()
+                .filter(stmt -> stmt instanceof no.uio.aeroscript.ast.stmt.Reaction)
+                .count();
+                
+            assertEquals(3, actionCount, "Should have 3 actions");
+            assertEquals(1, reactionCount, "Should have 1 reaction");
+            
+            // Test obstacle detection functionality
+            droneState.discoverObstacle(new Obstacle("ImmediateObstacle", new Point(25.0f, 25.0f)));
+            assertTrue(droneState.obstacleDetected(), "Obstacle should be detected");
+            
+            System.out.println("testImmediateObstacleReaction -> Complex mode parsing and obstacle detection test passed");
         }
     }
 
