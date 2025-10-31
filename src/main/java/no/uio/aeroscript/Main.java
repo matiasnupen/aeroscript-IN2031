@@ -148,8 +148,6 @@ public class Main {
                     }
                 }
 
-                // No need to wait for separate thread - program runs via REPL interaction
-
                 @SuppressWarnings("unchecked")
                 HashMap<String, Object> finalVars = (HashMap<String, Object>) heap.get(Memory.VARIABLES);
                 Point finalPosition = (Point) finalVars.get("current position");

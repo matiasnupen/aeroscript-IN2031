@@ -96,7 +96,7 @@ public class DroneState {
     public boolean hasObstacleOnMoveByDistance(Point start, Point end) {
         // Moving along the x-axis as standard for this program
         Float yRow = start.getY();
-        for (Float x = start.getX(); x <= end.getX(); x += 0.1f) { // TODO: maybe change the stepsize
+        for (Float x = start.getX(); x <= end.getX(); x += 0.1f) { // Put 0.1 as step size to check more points
             Point checkPoint = new Point(x, yRow);
             if (hasObstacleOnPoint(checkPoint)) {
                 logger.info("OBSTACLE FOUND between points: " + start.toString() + " and " + end.toString());
@@ -137,9 +137,9 @@ public class DroneState {
         return getBatteryLevel() <= 20.0f;
     }
 
-    /**
-     * Reset drone state for testing purposes
+    /** Reset drone state
      * Clears obstacles, messages, and resets to initial state
+     * This method is intended for use in unit tests to ensure a clean state
      */
     public void resetForTesting() {
         this.currentPosition = new Point(0, 0);

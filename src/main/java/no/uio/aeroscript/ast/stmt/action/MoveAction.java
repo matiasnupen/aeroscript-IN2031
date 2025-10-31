@@ -24,7 +24,7 @@ public abstract class MoveAction extends Action {
         Point currentPosition = droneState.getCurrentPosition();
         Point newPosition = calculateNewPosition(currentPosition);
         
-        // Check for obstacles before moving
+        // Checks for obstacles before moving
         if (droneState.hasObstacleOnPoint(newPosition) || droneState.hasObstacleOnMoveByDistance(currentPosition, newPosition)) {
             logger.warning("OBSTACLE DETECTED: Movement aborted to avoid collision.");
             return; // Abort movement

@@ -3,7 +3,6 @@ package no.uio.aeroscript.runtime;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Obstacle;
-import no.uio.aeroscript.runtime.DroneState;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -12,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-// Uncomment the following code for the REPL after implementing the mode and the rest of the code
 class Command {
     private final String name;
     private final REPL repl;
@@ -180,15 +178,15 @@ public class REPL {
         }, "Send a message to trigger drone actions", true, "Message ID to send"));
 
         commands.put("status", new Command("status", this, (param) -> {
-            DroneState drone = DroneState.getInstance();
+            DroneState droneState = DroneState.getInstance();
             printRepl("=== DRONE STATUS REPORT ===");
             printRepl("┌─────────────────────┬─────────────────────────────┐");
             printRepl("│ Parameter           │ Value                       │");
             printRepl("├─────────────────────┼─────────────────────────────┤");
-            printRepl(String.format("│ Position            │ %-27s │", drone.getCurrentPosition()));
-            printRepl(String.format("│ Altitude            │ %-27.1f │", drone.getCurrentAltitude()));
-            printRepl(String.format("│ Battery Level       │ %-27s │", String.format("%.1f%%", drone.getBatteryLevel())));
-            printRepl(String.format("│ Distance Travelled  │ %-27.1f │", drone.getTotalDistanceTravelled()));
+            printRepl(String.format("│ Position            │ %-27s │",  droneState.getCurrentPosition()));
+            printRepl(String.format("│ Altitude            │ %-27.1f │", droneState.getCurrentAltitude()));
+            printRepl(String.format("│ Battery Level       │ %-27s │", String.format("%.1f%%", droneState.getBatteryLevel())));
+            printRepl(String.format("│ Distance Travelled  │ %-27.1f │", droneState.getTotalDistanceTravelled()));
             printRepl(String.format("│ Current Mode        │ %-27s │", (initialMode != null ? initialMode.getName() : "Unknown")));
             printRepl(String.format("│ Available Messages  │ %-27d │", listeners.size()));
             printRepl("└─────────────────────┴─────────────────────────────┘");
