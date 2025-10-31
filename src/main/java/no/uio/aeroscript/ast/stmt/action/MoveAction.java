@@ -1,5 +1,7 @@
 package no.uio.aeroscript.ast.stmt.action;
 
+import java.util.logging.Logger;
+
 import no.uio.aeroscript.ast.expr.NumberExpression;
 import no.uio.aeroscript.ast.expr.PointExpression;
 import no.uio.aeroscript.ast.stmt.Action;
@@ -7,6 +9,8 @@ import no.uio.aeroscript.runtime.DroneState;
 import no.uio.aeroscript.type.Point;
 
 public abstract class MoveAction extends Action {
+
+    private static final Logger logger = java.util.logging.Logger.getLogger(MoveAction.class.getName());
 
     protected static final Float DISTANCE_BATTERY_MULTIPLIER = 0.05f;
 
@@ -19,8 +23,14 @@ public abstract class MoveAction extends Action {
         super.executeAction();
         Point currentPosition = droneState.getCurrentPosition();
         Point newPosition = calculateNewPosition(currentPosition);
-        Float distance = currentPosition.distanceTo(newPosition);
+        
+        // Check for obstacles before moving
+        if (droneState.hasObstacleOnPoint(newPosition) || droneState.hasObstacleOnMoveByDistance(currentPosition, newPosition)) {
+            logger.warning("OBSTACLE DETECTED: Movement aborted to avoid collision.");
+            return; // Abort movement
+        }
 
+        Float distance = currentPosition.distanceTo(newPosition);
         droneState.setCurrentPosition(newPosition);
         droneState.setTotalDistanceTravelled(droneState.getTotalDistanceTravelled() + distance);
     }

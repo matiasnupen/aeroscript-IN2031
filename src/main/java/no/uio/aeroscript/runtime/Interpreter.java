@@ -299,8 +299,6 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
                     return;
                 }
             }
-            
-            // For reactive modes, we don't block - the REPL handles interaction
             return;
         }
 
@@ -308,6 +306,18 @@ public class Interpreter extends AeroScriptBaseVisitor<Object> {
         if (hasActions) {
             for (Statement statement : mode.getStatements()) {
                 if (statement instanceof Action) {
+                    // Check for obstacle reactions BEFORE executing the action
+                    if (droneState.obstacleDetected()) {
+                        String targetModeName = mode.checkReactions(droneState);
+                        if (targetModeName != null) {
+                            Mode targetMode = findModeByName(getAllModes(), targetModeName);
+                            if (targetMode != null) {
+                                logger.info("OBSTACLE DETECTED! Immediately transitioning to mode: " + targetModeName);
+                                executeMode(targetMode);
+                                return; // Stop current mode execution - discard remaining actions
+                            }
+                        }
+                    }
                     executeAction((Action) statement);
                     // Check for reactions after each action
                     String targetModeName = mode.checkReactions(droneState);

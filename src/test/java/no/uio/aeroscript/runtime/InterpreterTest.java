@@ -1,23 +1,30 @@
 package no.uio.aeroscript.runtime;
 
-import no.uio.aeroscript.antlr.AeroScriptLexer;
-import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.expr.Expression;
-import no.uio.aeroscript.ast.stmt.Mode;
-import no.uio.aeroscript.ast.stmt.Statement;
-import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Point;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Stack;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Stack;
-
-import static org.junit.jupiter.api.Assertions.*;
+import no.uio.aeroscript.antlr.AeroScriptLexer;
+import no.uio.aeroscript.antlr.AeroScriptParser;
+import no.uio.aeroscript.ast.expr.Expression;
+import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.ast.stmt.Statement;
+import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.type.Obstacle;
+import no.uio.aeroscript.type.Point;
 
 class InterpreterTest {
     private HashMap<Memory, Object> heap;
@@ -135,6 +142,43 @@ class InterpreterTest {
             float validResult = evaluateExpression("2 + 3");
             System.out.println("testExpressionParsingErrors valid case -> " + validResult);
             assertEquals(5.0f, validResult);
+        }
+    }
+
+    @Nested
+    class EventTests {
+        private static final String EVENT_PROGRAM = """
+            -> TestMode {
+                move to point (10, 10)
+                on obstacle -> EmergencyMode
+            }
+            EmergencyMode { return to base }
+            """;
+
+        @Test
+        void testObstacleEventReaction() {
+            DroneState.getInstance().discoverObstacle(
+                new Obstacle("TestObstacle", new Point(10.0f, 10.0f))
+            );
+            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
+            System.out.println("testObstacleEventReaction -> Mode count: " + modes.size());
+            assertEquals(2, modes.size());
+        }
+
+        @Test
+        void testMessageEventReaction() {
+            DroneState.getInstance().receiveMessage("GoHome");
+            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
+            System.out.println("testMessageEventReaction -> Mode count: " + modes.size());
+            assertEquals(2, modes.size());
+        }
+
+        @Test
+        void testBatteryLowEventReaction() {
+
+            ArrayList<Mode> modes = parseProgram(EVENT_PROGRAM);
+            System.out.println("testBatteryLowEventReaction -> Mode count: " + modes.size());
+            assertEquals(2, modes.size());
         }
     }
 
