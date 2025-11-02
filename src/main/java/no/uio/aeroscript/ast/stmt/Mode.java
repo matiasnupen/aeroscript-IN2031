@@ -46,18 +46,6 @@ public class Mode {
         return null;
     }
 
-    public void executeStatements() {
-        for (Statement statement : statements) {
-            if (statement instanceof Action) {
-                // Execute action
-                statement.execute();
-            } else if (statement instanceof Reaction) {
-                // Register reaction for this mode
-                // Implementation depends on the broader context of the interpreter
-            }
-        }
-    }
-
     // Using StringBuilder for making it easier to read string representation
     @Override
     public String toString() {
