@@ -76,6 +76,8 @@ public class Main {
                 AeroScriptParser parser = new AeroScriptParser(tokens);
                 AeroScriptParser.ProgramContext programContext = parser.program();
 
+                // TODO: implement TypeChecking here for oblig4
+
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
                 
