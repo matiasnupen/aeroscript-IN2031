@@ -3,6 +3,7 @@ package no.uio.aeroscript.runtime;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Obstacle;
+import no.uio.aeroscript.type.Point;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -225,42 +226,76 @@ public class REPL {
 
         commands.put("obstacle", new Command("obstacle", this, (param) -> {
             if (param.trim().isEmpty()) {
-                printRepl("Please specify obstacle coordinates.");
-                printRepl("Usage: obstacle <x> <y> or obstacle <x,y>");
-                printRepl("Example: obstacle 10.5 20.0 or obstacle 10.5,20.0");
+                printRepl("Please specify obstacle coordinates, as well as its name.");
+                printRepl("Usage: obstacle <name> <x> <y> or obstacle <name> at <x>, <y>");
+                printRepl("Example: obstacle rock 10.5 20.0 or obstacle rock at 10.5, 20.0");
                 return true;
             }
             
+            String obstacleName;
             String[] coords;
-            // Check if parameter contains comma (for x,y format)
-            if (param.contains(",")) {
-                coords = param.trim().split("\\s*,\\s*"); // Split by comma with optional spaces
+            
+            // Check for natural language format "name at x, y"
+            if (param.toLowerCase().contains(" at ")) {
+                String[] atParts = param.split("(?i)\\s+at\\s+"); // Case-insensitive split on " at "
+                if (atParts.length == 2) {
+                    obstacleName = atParts[0].trim();
+                    String coordPart = atParts[1].trim();
+                    
+                    // Handle comma-separated coordinates
+                    if (coordPart.contains(",")) {
+                        coords = coordPart.split("\\s*,\\s*");
+                    } else {
+                        coords = coordPart.split("\\s+");
+                    }
+                } else {
+                    printRepl("ERROR: Invalid 'at' format. Use: obstacle <name> at <x>, <y>");
+                    return true;
+                }
             } else {
-                coords = param.trim().split("\\s+"); // Split by spaces
+                // Original format handling
+                String[] parts = param.trim().split("\\s+");
+                if (parts.length < 3) {
+                    obstacleName = "Simulated Obstacle"; // Default name
+                    if (param.contains(",")) {
+                        coords = param.trim().split("\\s*,\\s*");
+                    } else {
+                        coords = param.trim().split("\\s+");
+                    }
+                } else {
+                    obstacleName = parts[0];
+                    String coordPart = param.substring(parts[0].length()).trim();
+                    
+                    if (coordPart.contains(",")) {
+                        coords = coordPart.split("\\s*,\\s*");
+                    } else {
+                        coords = coordPart.split("\\s+");
+                    }
+                }
             }
             
             if (coords.length != 2) {
                 printRepl("ERROR: Invalid coordinates format.");
-                printRepl("Usage: obstacle <x> <y> or obstacle <x,y>");
+                printRepl("Usage: obstacle <name> <x> <y> or obstacle <name> at <x>, <y>");
                 return true;
             }
             
             try {
                 float x = Float.parseFloat(coords[0]);
                 float y = Float.parseFloat(coords[1]);
-                no.uio.aeroscript.type.Point obstacleLocation = new no.uio.aeroscript.type.Point(x, y);
-                no.uio.aeroscript.type.Obstacle obstacle = new no.uio.aeroscript.type.Obstacle("Simulated Obstacle", obstacleLocation);
+                Point obstacleLocation = new Point(x, y);
+                Obstacle obstacle = new Obstacle(obstacleName, obstacleLocation);
                 
                 DroneState.getInstance().discoverObstacle(obstacle);
-                printRepl(">>> OBSTACLE DETECTED at (" + x + ", " + y + ")!");
+                printRepl(">>> " + obstacleName + " OBSTACLE DETECTED at (" + x + ", " + y + ")!");
                 printRepl(">>> Obstacle event triggered!");
                 
             } catch (NumberFormatException e) {
                 printRepl("ERROR: Invalid number format. Use decimal numbers.");
-                printRepl("Example: obstacle 10.5 20.0 or obstacle 10.5,20.0");
+                printRepl("Example: obstacle rock 10.5 20.0 or obstacle rock at 10.5, 20.0");
             }
             return true;
-        }, "Simulate an obstacle detection", true, "X Y coordinates"));
+        }, "Simulate an obstacle detection", true, "name x y or name at x, y"));
 
         commands.put("exit", new Command("exit", this, (param) -> {
             printRepl("=== MISSION CONTROL SHUTDOWN ===");
