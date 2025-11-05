@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import no.uio.aeroscript.type.Obstacle;
 import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.Range;
 
 public class DroneState {
 
@@ -73,6 +74,7 @@ public class DroneState {
      * @param hasObstacleOnPoint(Point point) checks if there is an obstacle at the given point
      * @param hasObstacleOnMoveByDistance(Point start, Point end) checks if there is an obstacle along the path from start point to end point
      * @param obstacleDetected() checks if any obstacles are currently detected
+     * @param generateRandomObstacles(int count) generates a specified number of random obstacles in the environment
     **/
     public void discoverObstacle(Obstacle obstacle) {
         obstacle.discover();
@@ -107,6 +109,15 @@ public class DroneState {
     }
     public boolean obstacleDetected() {
         return !detectedObstacles.isEmpty();
+    }
+
+    public void generateRandomObstacles(int count) {
+        Range range = new Range(-100.0f, 100.0f);
+        for (int i = 0; i < count; i++) {
+            Point location = new Point(range.getRandomNumber(), range.getRandomNumber());
+            Obstacle obstacle = new Obstacle("Generated obstacle " + (i + 1), location);
+            discoverObstacle(obstacle);
+        }
     }
 
     /** Methods to handle received messages

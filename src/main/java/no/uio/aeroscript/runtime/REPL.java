@@ -1,16 +1,16 @@
 package no.uio.aeroscript.runtime;
 
-import no.uio.aeroscript.ast.stmt.Mode;
-import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Obstacle;
-import no.uio.aeroscript.type.Point;
-
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+
+import no.uio.aeroscript.ast.stmt.Mode;
+import no.uio.aeroscript.type.Memory;
+import no.uio.aeroscript.type.Obstacle;
+import no.uio.aeroscript.type.Point;
 
 class Command {
     private final String name;
@@ -124,20 +124,29 @@ public class REPL {
         commands.put("help", new Command("help", this, (param) -> {
             printRepl("=== AEROSCRIPT MISSION CONTROL CENTER ===");
             printRepl("Available Commands:");
-            printRepl("┌─────────────┬────────────────────────────────────────────┐");
-            printRepl("│ Command     │ Description                                │");
-            printRepl("├─────────────┼────────────────────────────────────────────┤");
-            printRepl("│ status      │ Show drone status and current mode         │");
-            printRepl("│ messages    │ List all available messages                │");
-            printRepl("│ obstacles   │ Shows all detected obstacles               │");
-            printRepl("│ message <id>│ Send a specific message to the drone       │");
-            printRepl("│ obstacle x,y│ Simulate obstacle detection at coordinates │");
-            printRepl("│ info        │ Show detailed system information           │");
-            printRepl("│ help        │ Show this help menu                        │");
-            printRepl("│ exit        │ Exit the mission control center            │");
-            printRepl("└─────────────┴────────────────────────────────────────────┘");
+            printRepl("┌──────────────────────┬────────────────────────────────────────────┐");
+            printRepl("│ Command              │ Description                                │");
+            printRepl("├──────────────────────┼────────────────────────────────────────────┤");
+            printRepl("│ generateObstacles    │ Generate random obstacles                  │");
+            printRepl("│ status               │ Show drone status and current mode         │");
+            printRepl("│ messages             │ List all available messages                │");
+            printRepl("│ obstacles            │ Shows all detected obstacles               │");
+            printRepl("│ message <id>         │ Send a specific message to the drone       │");
+            printRepl("│ obstacle x,y         │ Simulate obstacle detection at coordinates │");
+            printRepl("│ info                 │ Show detailed system information           │");
+            printRepl("│ help                 │ Show this help menu                        │");
+            printRepl("│ exit                 │ Exit the mission control center            │");
+            printRepl("└──────────────────────┴────────────────────────────────────────────┘");
             return true;
         }, "Show available commands and help", false, ""));
+
+        commands.put("generateObstacles", new Command("generateObstacles", this, (param) -> {
+            System.out.println(">>> GENERATING 5 RANDOM OBSTACLES...\n\n");
+            DroneState droneState = DroneState.getInstance();
+            droneState.generateRandomObstacles(5);
+            printRepl(">>> Generated 5 random obstacles in the environment.");
+            return true;
+        }, "Generate random obstacles", false, ""));
 
         commands.put("messages", new Command("messages", this, (param) -> {
             printRepl("=== AVAILABLE MESSAGES ===");
