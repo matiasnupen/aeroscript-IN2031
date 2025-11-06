@@ -18,9 +18,11 @@ import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.ast.stmt.Statement;
-import no.uio.aeroscript.runtime.BatteryDepletedException;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.runtime.REPL;
+import no.uio.aeroscript.runtime.TypeChecker;
+import no.uio.aeroscript.runtime.exceptions.TypeError;
+import no.uio.aeroscript.runtime.exceptions.BatteryDepletedException;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 
@@ -76,7 +78,14 @@ public class Main {
                 AeroScriptParser parser = new AeroScriptParser(tokens);
                 AeroScriptParser.ProgramContext programContext = parser.program();
 
-                // TODO: implement TypeChecking here for oblig4
+                TypeChecker typeChecker = new TypeChecker();
+                try {
+                    typeChecker.visit(programContext);
+                    logger.info("Type checking passed succesfully");
+                } catch (TypeError e) {
+                    logger.severe("Type checking failed: " + e.getMessage());
+                    System.exit(1); // TODO: maybe change what happens in case of a type error
+                }
 
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
