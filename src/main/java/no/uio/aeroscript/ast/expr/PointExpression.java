@@ -1,6 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
-import no.uio.aeroscript.type.impl.Point;
+import no.uio.aeroscript.type.interfaces.PointInterface;
+import no.uio.aeroscript.type.TypeFactory;
 
 public class PointExpression extends Expression {
     private final Expression left;
@@ -21,11 +22,11 @@ public class PointExpression extends Expression {
     }
 
     @Override
-    public Point evaluate(){
+    public PointInterface evaluate(){
         Object lval = this.left.evaluate();
         Object rval = this.right.evaluate();
         if (lval instanceof Float f1 && rval instanceof Float f2) {
-            return new Point(f1,f2);
+            return TypeFactory.createPoint(f1,f2);
         }
         else throw new IllegalArgumentException("Point coordinates must be numbers, got: " + lval + ", " + rval);
     }

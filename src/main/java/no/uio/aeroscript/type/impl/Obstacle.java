@@ -1,6 +1,7 @@
 package no.uio.aeroscript.type.impl;
 
 import no.uio.aeroscript.type.interfaces.ObstacleInterface;
+import no.uio.aeroscript.type.interfaces.PointInterface;
 
 /**
  * @param class Obstacle represents an obstacle
@@ -11,10 +12,10 @@ import no.uio.aeroscript.type.interfaces.ObstacleInterface;
 
 public class Obstacle implements ObstacleInterface {
     private String obstacleName;
-    private Point location;
+    private PointInterface location;
     private boolean isDiscovered = false;
 
-    public Obstacle(String obstacleName, Point location) {
+    public Obstacle(String obstacleName, PointInterface location) {
         this.obstacleName = obstacleName;
         this.location = location;
     }
@@ -22,7 +23,7 @@ public class Obstacle implements ObstacleInterface {
     public String getObstacleName() {
         return obstacleName;
     }
-    public Point getLocation() {
+    public PointInterface getLocation() {
         return location;
     }
     public boolean isDiscovered() {

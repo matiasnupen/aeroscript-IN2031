@@ -1,6 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
-import no.uio.aeroscript.type.impl.Range;
+import no.uio.aeroscript.type.interfaces.RangeInterface;
+import no.uio.aeroscript.type.TypeFactory;
 
 public class RangeExpression extends Expression {
     private final Expression left;
@@ -22,7 +23,7 @@ public class RangeExpression extends Expression {
         Object lval = this.left.evaluate();
         Object rval = this.right.evaluate();
         if (lval instanceof Float f1 && rval instanceof Float f2) {
-            return new Range(f1,f2).getRandomNumber();
+            return TypeFactory.createRange(f1,f2).getRandomNumber();
         }
         else throw new IllegalArgumentException("Range bounds must be numbers, got: " + lval + ", " + rval);
     }
