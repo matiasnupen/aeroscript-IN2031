@@ -22,7 +22,7 @@ import no.uio.aeroscript.runtime.BatteryDepletedException;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.runtime.REPL;
 import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.impl.Point;
 
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());

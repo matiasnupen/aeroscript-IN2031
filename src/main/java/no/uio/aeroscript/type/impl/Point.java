@@ -1,6 +1,8 @@
-package no.uio.aeroscript.type;
+package no.uio.aeroscript.type.impl;
 
-public class Point {
+import no.uio.aeroscript.type.interfaces.PointInterface;
+
+public class Point implements PointInterface {
     private final float x;
     private final float y;
 
@@ -13,18 +15,21 @@ public class Point {
         System.out.println("Point: (" + this.x + ", " + this.y + ")");
     }
 
-    public float getX() {
+    @Override
+    public Float getX() {
         return x;
     }
 
-    public float getY() {
+    @Override
+    public Float getY() {
         return y;
     }
 
     // Method for calculating the distance between two points
-    public Float distanceTo(Point other) {
-        Float distanceX = this.x - other.x;
-        Float distanceY = this.y - other.y; 
+    @Override
+    public Float distanceTo(PointInterface other) {
+        Float distanceX = this.x - other.getX();
+        Float distanceY = this.y - other.getY(); 
         return (float) Math.max(Math.abs(distanceX), Math.abs(distanceY));
     }
 

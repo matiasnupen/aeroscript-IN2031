@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import no.uio.aeroscript.type.Obstacle;
-import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.impl.Obstacle;
+import no.uio.aeroscript.type.impl.Point;
 
 public class DroneState {
 

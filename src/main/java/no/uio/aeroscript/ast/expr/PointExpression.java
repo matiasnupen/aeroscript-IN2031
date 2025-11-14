@@ -1,6 +1,6 @@
 package no.uio.aeroscript.ast.expr;
 
-import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.impl.Point;
 
 public class PointExpression extends Expression {
     private final Expression left;

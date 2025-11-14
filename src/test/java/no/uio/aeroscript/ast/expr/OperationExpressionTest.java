@@ -1,8 +1,9 @@
 package no.uio.aeroscript.ast.expr;
 
-import no.uio.aeroscript.type.Point;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import no.uio.aeroscript.type.impl.Point;
 
 import static org.junit.jupiter.api.Assertions.*;
 

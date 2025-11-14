@@ -2,7 +2,7 @@ package no.uio.aeroscript.runtime;
 
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Obstacle;
+import no.uio.aeroscript.type.impl.Obstacle;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -248,8 +248,8 @@ public class REPL {
             try {
                 float x = Float.parseFloat(coords[0]);
                 float y = Float.parseFloat(coords[1]);
-                no.uio.aeroscript.type.Point obstacleLocation = new no.uio.aeroscript.type.Point(x, y);
-                no.uio.aeroscript.type.Obstacle obstacle = new no.uio.aeroscript.type.Obstacle("Simulated Obstacle", obstacleLocation);
+                no.uio.aeroscript.type.impl.Point obstacleLocation = new no.uio.aeroscript.type.impl.Point(x, y);
+                no.uio.aeroscript.type.impl.Obstacle obstacle = new no.uio.aeroscript.type.impl.Obstacle("Simulated Obstacle", obstacleLocation);
                 
                 DroneState.getInstance().discoverObstacle(obstacle);
                 printRepl(">>> OBSTACLE DETECTED at (" + x + ", " + y + ")!");

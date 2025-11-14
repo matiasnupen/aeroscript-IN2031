@@ -31,8 +31,8 @@ import no.uio.aeroscript.ast.stmt.event.LowBatteryEvent;
 import no.uio.aeroscript.ast.stmt.event.MessageEvent;
 import no.uio.aeroscript.ast.stmt.event.ObstacleEvent;
 import no.uio.aeroscript.type.Memory;
-import no.uio.aeroscript.type.Point;
-import no.uio.aeroscript.type.Range;
+import no.uio.aeroscript.type.impl.Point;
+import no.uio.aeroscript.type.impl.Range;
 
 /** Interpreter class
  * @param heap is the memory heap for variable storage

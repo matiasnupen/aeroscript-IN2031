@@ -6,7 +6,7 @@ import no.uio.aeroscript.ast.expr.NumberExpression;
 import no.uio.aeroscript.ast.expr.PointExpression;
 import no.uio.aeroscript.ast.stmt.Action;
 import no.uio.aeroscript.runtime.DroneState;
-import no.uio.aeroscript.type.Point;
+import no.uio.aeroscript.type.impl.Point;
 
 public abstract class MoveAction extends Action {
 

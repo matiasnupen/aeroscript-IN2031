@@ -1,6 +1,6 @@
 package no.uio.aeroscript.ast.expr;
 
-import no.uio.aeroscript.type.Range;
+import no.uio.aeroscript.type.impl.Range;
 
 public class RangeExpression extends Expression {
     private final Expression left;
