@@ -18,7 +18,7 @@ import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.ast.stmt.Statement;
-import no.uio.aeroscript.runtime.BatteryDepletedException;
+import no.uio.aeroscript.error.BatteryDepletedException;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.runtime.REPL;
 import no.uio.aeroscript.type.Memory;

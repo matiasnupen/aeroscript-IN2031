@@ -1,4 +1,4 @@
-package no.uio.aeroscript.runtime;
+package no.uio.aeroscript.error;
 
 // Exception thrown when the drone's battery is insufficient to perform an action.
 public class BatteryDepletedException extends RuntimeException {
