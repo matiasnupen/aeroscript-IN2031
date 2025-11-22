@@ -1,0 +1,4 @@
+-> Start {
+    ascend by point(10, 20)
+    move to point (50, 50)
+}

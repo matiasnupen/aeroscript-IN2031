@@ -62,15 +62,15 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitAction(AeroScriptParser.ActionContext ctx) {
         // Check action-specific types
         if (ctx.acDock() != null) {
-            return visitAcDock(ctx.acDock());
+            visitAcDock(ctx.acDock());
         } else if (ctx.acMove() != null) {
-            return visitAcMove(ctx.acMove());
+            visitAcMove(ctx.acMove());
         } else if (ctx.acTurn() != null) {
-            return visitAcTurn(ctx.acTurn());
+            visitAcTurn(ctx.acTurn());
         } else if (ctx.acAscend() != null) {
-            return visitAcAscend(ctx.acAscend());
+            visitAcAscend(ctx.acAscend());
         } else if (ctx.acDescend() != null) {
-            return visitAcDescend(ctx.acDescend());
+            visitAcDescend(ctx.acDescend());
         }
 
         // Check optional modifiers (FOR / AT SPEED)

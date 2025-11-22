@@ -1,0 +1,8 @@
+-> Start {
+    ascend by 10
+    move to point (50, 50)
+    turn left by 90
+    move by random[10, 20]
+    descend by 5
+    return to base
+}
