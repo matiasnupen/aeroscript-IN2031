@@ -2,7 +2,6 @@ package no.uio.aeroscript.runtime;
 
 import no.uio.aeroscript.antlr.AeroScriptBaseVisitor;
 import no.uio.aeroscript.antlr.AeroScriptParser;
-import no.uio.aeroscript.ast.expr.NumberExpression;
 import no.uio.aeroscript.error.TypeError;
 
 public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
@@ -22,6 +21,14 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
 
     public void check() {
         visitProgram(programContext);
+    }
+
+    /**
+     * Helper method to check if a type can be used as a number.
+     * RANGE is accepted because random[a,b] evaluates to a number at runtime.
+     */
+    private boolean isNumericType(Type type) {
+        return type == Type.NUM || type == Type.RANGE;
     }
 
     @Override
@@ -66,18 +73,16 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
             return visitAcDescend(ctx.acDescend());
         }
 
-        // Check optional modifiers (FOR // AT SPEED)
-        if (ctx.getChildCount() > 1) {
+        // Check optional modifiers (FOR / AT SPEED)
+        if (ctx.expression() != null) {
+            Type modifierType = visitExpression(ctx.expression());
             if (ctx.FOR() != null) {
-                Type durationType = visitExpression((AeroScriptParser.ExpressionContext) ctx.getChild(2));            
-                if (durationType != Type.NUM) {
-                throw new TypeError("Duration in FOR clause must be a number, got: " + durationType + " in: " + ctx.getText());
-            }
-        }
-            if (ctx.AT() != null) {
-                Type speedType = visitExpression((AeroScriptParser.ExpressionContext) ctx.getChild(3));            
-                if (speedType != Type.NUM) {
-                    throw new TypeError("Speed in AT SPEED clause must be a number, got: " + speedType + " in: " + ctx.getText());
+                if (!isNumericType(modifierType)) {
+                    throw new TypeError("Duration in FOR clause must be a number, got: " + modifierType + " in: " + ctx.getText());
+                }
+            } else if (ctx.AT() != null) {
+                if (!isNumericType(modifierType)) {
+                    throw new TypeError("Speed in AT SPEED clause must be a number, got: " + modifierType + " in: " + ctx.getText());
                 }
             }
         }
@@ -106,7 +111,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitAcTurn(AeroScriptParser.AcTurnContext ctx) {
         // TURN requires a NUM type for degrees
         Type degreeType = visitExpression(ctx.expression());
-        if (degreeType != Type.NUM) {
+        if (!isNumericType(degreeType)) {
             throw new TypeError("Turn action requires a NUM type for degrees, got: " + degreeType + " in: " + ctx.getText());
         }
         return Type.VOID;
@@ -116,7 +121,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitAcAscend(AeroScriptParser.AcAscendContext ctx) {
         // ASCEND requires a NUM type for height
         Type numberAscendingType = visitExpression(ctx.expression());
-        if (numberAscendingType != Type.NUM) {
+        if (!isNumericType(numberAscendingType)) {
             throw new TypeError("Ascend action requires a NUM type for height, got: " + numberAscendingType + " in: " + ctx.getText());
         }
         return Type.VOID;
@@ -127,7 +132,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
         if (ctx.BY() != null) {
             // DESCEND BY requires a NUM type
             Type numberDescendingType = visitExpression(ctx.expression());
-            if (numberDescendingType != Type.NUM) {
+            if (!isNumericType(numberDescendingType)) {
                 throw new TypeError("Descend action with BY requires a NUM type for height, got: " + numberDescendingType + " in: " + ctx.getText());
             }
         }
@@ -147,7 +152,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
         return Type.VOID;
     }
 
-    @Override
+    // Helper method to dispatch expression types
     public Type visitExpression(AeroScriptParser.ExpressionContext ctx) {
        return switch (ctx) {
             case AeroScriptParser.PlusExpContext pex -> visitPlusExp(pex);
@@ -166,7 +171,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitPlusExp(AeroScriptParser.PlusExpContext ctx) {
         Type leftType = visitExpression(ctx.left);
         Type rightType = visitExpression(ctx.right);
-        if (leftType != Type.NUM || rightType != Type.NUM) {
+        if (!isNumericType(leftType) || !isNumericType(rightType)) {
             throw new TypeError("Plus expression requires NUM types, got: " + leftType + " and " + rightType + " in: " + ctx.getText());
         }
         return Type.NUM;
@@ -176,7 +181,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitMinusExp(AeroScriptParser.MinusExpContext ctx) {
         Type leftType = visitExpression(ctx.left);
         Type rightType = visitExpression(ctx.right);
-        if (leftType != Type.NUM || rightType != Type.NUM) {
+        if (!isNumericType(leftType) || !isNumericType(rightType)) {
             throw new TypeError("Minus expression requires NUM types, got: " + leftType + " and " + rightType + " in: " + ctx.getText());
         }
         return Type.NUM;
@@ -186,7 +191,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitTimesExp(AeroScriptParser.TimesExpContext ctx) {
         Type leftType = visitExpression(ctx.left);
         Type rightType = visitExpression(ctx.right);
-        if (leftType != Type.NUM || rightType != Type.NUM) {
+        if (!isNumericType(leftType) || !isNumericType(rightType)) {
             throw new TypeError("Times expression requires NUM types, got: " + leftType + " and " + rightType + " in: " + ctx.getText());
         }
         return Type.NUM;
@@ -200,7 +205,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     @Override
     public Type visitNegExp(AeroScriptParser.NegExpContext ctx) {
         Type exprType = visitExpression(ctx.expression());
-        if (exprType != Type.NUM) {
+        if (!isNumericType(exprType)) {
             throw new TypeError("Negation expression requires NUM type, got: " + exprType + " in: " + ctx.getText());
         }
         return Type.NUM;
@@ -212,7 +217,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     }
     @Override
     public Type visitRangeExp(AeroScriptParser.RangeExpContext ctx) {
-        return visitRange(ctx.range());
+        return visitRange(ctx.range()); // Should return Type.RANGE
     }
     @Override
     public Type visitPointExp(AeroScriptParser.PointExpContext ctx) {
@@ -223,7 +228,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitPoint(AeroScriptParser.PointContext ctx) {
         Type xType = visitExpression(ctx.left);
         Type yType = visitExpression(ctx.right);
-        if (xType != Type.NUM || yType != Type.NUM) {
+        if (!isNumericType(xType) || !isNumericType(yType)) {
             throw new TypeError("Point requires NUM types for x and y coordinates, got: " + xType + " and " + yType + " in: " + ctx.getText());
         }
         return Type.POINT;
@@ -233,7 +238,7 @@ public class TypeChecker extends AeroScriptBaseVisitor<TypeChecker.Type> {
     public Type visitRange(AeroScriptParser.RangeContext ctx) {
         Type startType = visitExpression(ctx.left);
         Type endType = visitExpression(ctx.right);
-        if (startType != Type.NUM || endType != Type.NUM) {
+        if (!isNumericType(startType) || !isNumericType(endType)) {
             throw new TypeError("Range requires NUM types for start and end, got: " + startType + " and " + endType + " in: " + ctx.getText());
         }
         return Type.RANGE;
