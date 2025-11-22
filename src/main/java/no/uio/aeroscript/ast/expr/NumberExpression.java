@@ -1,5 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
+import no.uio.aeroscript.type.Type;
+
 public class NumberExpression extends Expression {
     // Implement the NumberNode class to handle numbers
     private final Float number;
@@ -12,6 +14,12 @@ public class NumberExpression extends Expression {
     @Override
     public Float evaluate(){
         return this.number;
+    }
+
+    @Override
+    public Type typeCheck() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'typeCheck'");
     }
 }
 

@@ -1,5 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
+import no.uio.aeroscript.type.Type;
+
 public class NegNumberExpression extends Expression {
 
     /** The NegNumberExpression is supposed to handle unary negation of numbers
@@ -27,5 +29,11 @@ public class NegNumberExpression extends Expression {
         } else {
             throw new IllegalArgumentException("Wanted a Number, got a Node " + tmp);
         }
+    }
+
+    @Override
+    public Type typeCheck() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'typeCheck'");
     }
 }

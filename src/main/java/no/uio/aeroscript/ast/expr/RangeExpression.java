@@ -1,6 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
 import no.uio.aeroscript.type.interfaces.RangeInterface;
+import no.uio.aeroscript.type.Type;
 import no.uio.aeroscript.type.TypeFactory;
 
 public class RangeExpression extends Expression {
@@ -26,5 +27,11 @@ public class RangeExpression extends Expression {
             return TypeFactory.createRange(f1,f2).getRandomNumber();
         }
         else throw new IllegalArgumentException("Range bounds must be numbers, got: " + lval + ", " + rval);
+    }
+
+    @Override
+    public Type typeCheck() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'typeCheck'");
     }
 }

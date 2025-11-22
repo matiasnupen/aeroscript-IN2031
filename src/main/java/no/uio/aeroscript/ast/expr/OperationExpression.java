@@ -1,5 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
+import no.uio.aeroscript.type.Type;
+
 public class OperationExpression extends Expression {
     private final String operation;
     private final Expression left;
@@ -52,5 +54,11 @@ public class OperationExpression extends Expression {
         } else {
             throw new IllegalArgumentException("Invalid arguments to arithmetic operation");
         }
+    }
+
+    @Override
+    public Type typeCheck() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'typeCheck'");
     }
 }

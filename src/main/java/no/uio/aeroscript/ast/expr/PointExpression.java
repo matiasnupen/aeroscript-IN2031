@@ -1,6 +1,7 @@
 package no.uio.aeroscript.ast.expr;
 
 import no.uio.aeroscript.type.interfaces.PointInterface;
+import no.uio.aeroscript.type.Type;
 import no.uio.aeroscript.type.TypeFactory;
 
 public class PointExpression extends Expression {
@@ -29,5 +30,11 @@ public class PointExpression extends Expression {
             return TypeFactory.createPoint(f1,f2);
         }
         else throw new IllegalArgumentException("Point coordinates must be numbers, got: " + lval + ", " + rval);
+    }
+
+    @Override
+    public Type typeCheck() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'typeCheck'");
     }
 }
