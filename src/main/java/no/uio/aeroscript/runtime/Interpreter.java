@@ -30,6 +30,7 @@ import no.uio.aeroscript.ast.stmt.action.TurnAction;
 import no.uio.aeroscript.ast.stmt.event.LowBatteryEvent;
 import no.uio.aeroscript.ast.stmt.event.MessageEvent;
 import no.uio.aeroscript.ast.stmt.event.ObstacleEvent;
+import no.uio.aeroscript.error.BatteryDepletedException;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 import no.uio.aeroscript.type.Range;

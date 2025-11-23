@@ -57,13 +57,13 @@ public abstract class Action extends Statement{
 
         // Check if there's sufficient battery before executing the action
         if (currentBatteryLevel <= 0.0f) {
-            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+            throw new no.uio.aeroscript.error.BatteryDepletedException(
                 currentBatteryLevel, this.getClass().getSimpleName()
             );
         }
         
         if (batteryCost > currentBatteryLevel) {
-            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+            throw new no.uio.aeroscript.error.BatteryDepletedException(
                 currentBatteryLevel, batteryCost, this.getClass().getSimpleName()
             );
         }
@@ -86,7 +86,7 @@ public abstract class Action extends Statement{
         
         // Throw exception if battery is now completely depleted
         if (newBatteryLevel <= 0.0f) {
-            throw new no.uio.aeroscript.runtime.BatteryDepletedException(
+            throw new no.uio.aeroscript.error.BatteryDepletedException(
                 newBatteryLevel, this.getClass().getSimpleName()
             );
         }

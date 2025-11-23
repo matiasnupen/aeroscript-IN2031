@@ -18,9 +18,10 @@ import no.uio.aeroscript.antlr.AeroScriptLexer;
 import no.uio.aeroscript.antlr.AeroScriptParser;
 import no.uio.aeroscript.ast.stmt.Mode;
 import no.uio.aeroscript.ast.stmt.Statement;
-import no.uio.aeroscript.runtime.BatteryDepletedException;
+import no.uio.aeroscript.error.TypeError;
 import no.uio.aeroscript.runtime.Interpreter;
 import no.uio.aeroscript.runtime.REPL;
+import no.uio.aeroscript.runtime.TypeChecker;
 import no.uio.aeroscript.type.Memory;
 import no.uio.aeroscript.type.Point;
 
@@ -75,6 +76,22 @@ public class Main {
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 AeroScriptParser parser = new AeroScriptParser(tokens);
                 AeroScriptParser.ProgramContext programContext = parser.program();
+
+                // Type checking
+                logger.info("Performing type checking...");
+                TypeChecker typeChecker = new TypeChecker(programContext);
+                try {
+                    typeChecker.check();
+                    logger.info("Type checking completed successfully.");
+                } catch (TypeError e) {
+                    logger.severe("TYPE ERROR: " + e.getMessage());
+                    System.err.println("\n" + "=".repeat(60));
+                    System.err.println("TYPE ERROR DETECTED");
+                    System.err.println("=".repeat(60));
+                    System.err.println(e.getMessage());
+                    System.err.println("=".repeat(60) + "\n");
+                    System.exit(1);
+                }
 
                 Interpreter interpreter = new Interpreter(heap, stack);
                 ArrayList<Mode> modes = (ArrayList<Mode>) interpreter.visitProgram(programContext);
